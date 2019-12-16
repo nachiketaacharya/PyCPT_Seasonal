@@ -2217,6 +2217,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   X Spatial Loadings Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCA_EOFX_Jun-Sep_May.dat
   
  Done!
@@ -2474,6 +2479,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Y Spatial Loadings Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCA_EOFY_Jun-Sep_May.dat
   
  Done!
@@ -2684,6 +2694,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  Calculating Pearson's Correlation ...
  Done!
  Skill Scores Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCA_Pearson_Jun-Sep_May.dat
   
  Done!
@@ -2830,6 +2845,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  Calculating Spearman's Correlation ...
  Done!
  Skill Scores Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCA_Spearman_Jun-Sep_May.dat
   
  Done!
@@ -2976,6 +2996,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  Calculating 2AFC Score ...
  Done!
  Skill Scores Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCA_2AFC_Jun-Sep_May.dat
   
  Done!
@@ -3122,6 +3147,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  Calculating ROC Area (Below-Normal) ...
  Done!
  Skill Scores Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCA_RocBelow_Jun-Sep_May.dat
   
  Done!
@@ -3268,6 +3298,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  Calculating ROC Area (Above-Normal) ...
  Done!
  Skill Scores Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCA_RocAbove_Jun-Sep_May.dat
   
  Done!
@@ -4373,6 +4408,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Forecast Probabilities Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCAFCST_P_Jun-Sep_May2019.dat
   
  Done!
@@ -5514,6 +5554,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Forecasts Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCAFCST_V_Jun-Sep_May2019.dat
   
  Done!
@@ -5602,6 +5647,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Cross-Validated Predictions Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCAFCST_xvPr_Jun-Sep_May2019.dat
   
  Done!
@@ -5690,6 +5740,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Forecasts Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCAFCST_mu_Jun-Sep_May2019.dat
   
  Done!
@@ -5778,6 +5833,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Prediction Error Variances Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCAFCST_var_Jun-Sep_May2019.dat
   
  Done!
@@ -5866,6 +5926,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Predictor CCA Time Scores Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCAFCST_z_Jun-Sep_May2019.dat
   
  Done!
@@ -5954,6 +6019,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Y Input Data Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCPPRCP_CCAFCST_Obs_Jun-Sep_May2019.dat
   
  Done!
@@ -6340,6 +6410,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Cross-Validated Predictions Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCP_CCAFCST_xvPr_Jun-Sep_May2019.txt
   
  Done!
@@ -6428,6 +6503,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Forecasts Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCP_CCAFCST_mu_Jun-Sep_May2019.txt
   
  Done!
@@ -6516,6 +6596,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Forecast Probabilities Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCP_CCAFCST_P_Jun-Sep_May2019.txt
   
  Done!
@@ -6604,6 +6689,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Prediction Error Variances Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCP_CCAFCST_var_Jun-Sep_May2019.txt
   
  Done!
@@ -6692,6 +6782,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Predictor CCA Time Scores Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCP_CCAFCST_z_Jun-Sep_May2019.txt
   
  Done!
@@ -6780,6 +6875,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
  0. Exit
   
  >   Y Input Data Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCP_CCAFCST_Obs_Jun-Sep_May2019.txt
   
  Done!
@@ -6957,6 +7057,11 @@ Length of training period (minimum is 4; maximum is 27):  >   __________________
   
  Warning:  Old file identifier has been converted.
  Y Input Data Output file:   
+  
+                                    Warning
+  
+ Warning:  File already exists. Overwriting old file
+  
  Saving: ../output/NCEP-CFSv2_PRCP_CCA_2AFC_Jun-Sep_May2019.txt
   
  Done!
