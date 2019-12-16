@@ -1,7 +1,17 @@
-#This is PyCPT_functions_seasonal.py (version1.3) -- 10 Sept 2019
-#Authors: AG Muñoz (agmunoz@iri.columbia.edu) and Andrew W. Robertson (awr@iri.columbia.edu)
+#This is PyCPT_functions_seasonal.py (version1.3) -- 15 Dec 2019
+#Authors: AG Muñoz (agmunoz@iri.columbia.edu), Andrew W. Robertson (awr@iri.columbia.edu) & Kyle Hall (kjh2171@columbia.edu)
 #Notes: be sure it matches version of PyCPT
 #Log:
+
+#* Aesthetic upgrades  (plotmap only) -kjch
+# ---Implemented discrete colorbars
+# ---Removed borders btw map sections
+# ---Added Lat/Long lines
+# ---Should work for multiple targets & autofit
+# -----but idk how to run with multiple targets
+# ---Added model names to Output
+
+
 
 #* Started simplifying functions, wrote readGrADSctl function; added functions to create the NextGen files for det skill assessment and plotting --AGM, Sep 2019
 #* Fixed bug with plotting functions when selecting a subset of the seasons, and added start time for forecast file in CPT script -- AGM, July 1st 2019
@@ -27,13 +37,14 @@ from scipy.stats import t
 from scipy.stats import invgamma
 import cartopy.crs as ccrs
 from cartopy import feature
+import cartopy.mpl.ticker as cticker
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.ticker as ticker
 from matplotlib.colors import LinearSegmentedColormap
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import fileinput
-
+import numpy as np
 
 warnings.filterwarnings("ignore")
 
@@ -375,28 +386,29 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 	nmods=len(models)
 	nsea=len(mons)
 
-	#plt.figure(figsize=(20,10))
-	fig, ax = plt.subplots(figsize=(20,15),sharex=True,sharey=True)
-	k=0
-	for model in models:
-		print(model)
-		for tar in mons:
-			k=k+1
-			mon=mo[tgts.index(tar)]
+	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(20,140),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	#fig = plt.figure(figsize=(20,40))
+	#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
+	#ax.append(plt.subplot2grid((nmods+1, nsea), (nmods, 0), colspan=nsea ) )
+
+
+	for i in range(nmods):
+		for j in range(nsea):
+			mon=mo[tgts.index(mons[j])]
 			#Read grads binary file size H, W  --it assumes all files have the same size, and that 2AFC exists
-			with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+tar+'_'+mon+'.ctl', "r") as fp:
+			with open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+mons[j]+'_'+mon+'.ctl', "r") as fp:
 				for line in lines_that_contain("XDEF", fp):
 					W = int(line.split()[1])
 					XD= float(line.split()[4])
-			with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+tar+'_'+mon+'.ctl', "r") as fp:
+			with open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+mons[j]+'_'+mon+'.ctl', "r") as fp:
 				for line in lines_that_contain("YDEF", fp):
 					H = int(line.split()[1])
 					YD= float(line.split()[4])
 
 #			ax = plt.subplot(nwk/2, 2, wk, projection=ccrs.PlateCarree())
 
-			ax = plt.subplot(nmods,nsea, k, projection=ccrs.PlateCarree())
-			ax.set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())
+			#ax = plt.subplot(nmods,nsea, k, projection=ccrs.PlateCarree())
+			ax[i*nsea + j].set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())
 
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
@@ -406,39 +418,37 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				scale='10m',
 				facecolor='none')
 
-			ax.add_feature(feature.LAND)
-			ax.add_feature(feature.COASTLINE)
-
-			#tick_spacing=0.5
-			#ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
-
-			pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-				  linewidth=2, color='gray', alpha=0., linestyle='--')
+			ax[i*nsea + j].add_feature(feature.LAND)
+			ax[i*nsea + j].add_feature(feature.COASTLINE)
+			pl=ax[i*nsea + j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
 			pl.xlabels_top = False
 			pl.ylabels_left = True
 			pl.ylabels_right = False
 			pl.xlabels_bottom = False
-			if k > (nmods)*nsea-nsea:
+			if i == nmods - 1:
 				pl.xlabels_bottom = True
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax.add_feature(states_provinces, edgecolor='gray')
-			ax.set_ybound(lower=lati, upper=late)
+			ax[i*nsea + j].add_feature(states_provinces, edgecolor='gray')
+			ax[i*nsea + j].set_ybound(lower=lati, upper=late)
 
-			if k<=nsea:
-				ax.set_title(tar)
+			if j == 0:
+				ax[i*nsea + j].text(-0.10, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i*nsea + j].transAxes)
+			if i == 0:
+				ax[i*nsea + j].set_title(mons[j])
 			#for i, axi in enumerate(axes):  # need to enumerate to slice the data
 			#	axi.set_ylabel(model, fontsize=12)
 
 			if score == 'CCAFCST_V' or score == 'PCRFCST_V':
-				f=open('../output/'+model+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
+				f=open('../output/'+models[i]+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
 				recl=struct.unpack('i',f.read(4))[0]
 				numval=int(recl/np.dtype('float32').itemsize)
 				#Now we read the field
 				A=np.fromfile(f,dtype='float32',count=numval)
 				var = np.transpose(A.reshape((W, H), order='F'))
 				var[var==-999.]=np.nan #only sensible values
-				current_cmap = plt.cm.BrBG
+				current_cmap = plt.cm.get_cmap('bwr', 10)
 				current_cmap.set_bad('white',1.0)
 				current_cmap.set_under('white', 1.0)
 				CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
@@ -446,7 +456,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					norm=MidpointNormalize(midpoint=0.),
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
-				ax.set_title("Deterministic forecast for Week "+str(wk))
+				ax[i*nsea + j].set_title("Deterministic forecast for Week "+str(wk))
 				if fprefix == 'RFREQ':
 					label ='Freq Rainy Days (days)'
 				elif fprefix == 'PRCP':
@@ -457,7 +467,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				#current_cmap.set_under('white', 1.0)
 			else:
 				#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-				f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_'+score+'_'+tar+'_'+mon+'.dat','rb')
+				f=open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_'+score+'_'+mons[j]+'_'+mon+'.dat','rb')
 				recl=struct.unpack('i',f.read(4))[0]
 				numval=int(recl/np.dtype('float32').itemsize)
 				#Now we read the field
@@ -466,38 +476,39 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				#define colorbars, depending on each score	--This can be easily written as a function
 				if score == '2AFC':
 					var[var<0]=np.nan #only positive values
-					CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
+					CS=ax[i*nsea + j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=100,
-					cmap=plt.cm.bwr,
+					cmap=plt.cm.get_cmap('bwr', 10),
 					transform=ccrs.PlateCarree())
 					label = '2AFC (%)'
 
 				if score == 'RocAbove' or score=='RocBelow':
 					var[var<0]=np.nan #only positive values
-					CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
+					CS=ax[i*nsea + j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=1,
-					cmap=plt.cm.bwr,
+					cmap=plt.cm.get_cmap('bwr', 10),
 					transform=ccrs.PlateCarree())
 					label = 'ROC area'
 
 				if score == 'Spearman' or score=='Pearson':
 					var[var<-1.]=np.nan #only sensible values
-					CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
+					CS=ax[i*nsea + j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=-1,vmax=1,
-					cmap=plt.cm.bwr,
+					cmap=plt.cm.get_cmap('bwr', 10),
 					transform=ccrs.PlateCarree())
 					label = 'Correlation'
 
-				plt.subplots_adjust(hspace=0)
 				#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 				#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 				#plt.tight_layout()
 				#plt.autoscale(enable=True)
-				plt.subplots_adjust(bottom=0.15, top=0.9)
-				cax = plt.axes([0.2, 0.08, 0.6, 0.04])
-				cbar = plt.colorbar(CS,cax=cax, orientation='horizontal')
-				cbar.set_label(label) #, rotation=270)
-				f.close()
+	plt.subplots_adjust(hspace=0.0)
+	#plt.subplots_adjust(hspace=0.0)
+	#cax = plt.axes([0.0, 0.0, 0.30, 0.02])
+	#cbar = fig.colorbar(CS, cax=ax[len(ax)-1], orientation='horizontal')
+	cbar = fig.colorbar(CS, ax=ax, orientation='horizontal', pad=0.01)
+	cbar.set_label(label) #, rotation=270)\
+	f.close()
 
 def skilltab(score,wknam,lon1,lat1,lat2,lon2,loni,lone,lati,late,fprefix,mpref,training_season,mon,fday,nwk):
 	"""A simple function for ploting probabilities of exceedance and PDFs (for a given threshold)
