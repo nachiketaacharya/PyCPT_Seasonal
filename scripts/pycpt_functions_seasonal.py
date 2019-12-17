@@ -311,7 +311,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 			CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
 			vmin=-.1,vmax=.1,
-			cmap=plt.cm.get_cmap('bwr', 10),
+			cmap=plt.cm.get_cmap('viridis', 10),
 			transform=ccrs.PlateCarree())
 			label = 'EOF charges'
 	plt.subplots_adjust(hspace=0)
@@ -435,7 +435,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					var[var<0]=np.nan #only positive values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=100,
-					cmap=plt.cm.get_cmap('bwr', 10),
+					cmap=plt.cm.get_cmap('viridis', 10),
 					transform=ccrs.PlateCarree())
 					label = '2AFC (%)'
 
@@ -443,7 +443,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					var[var<0]=np.nan #only positive values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=1,
-					cmap=plt.cm.get_cmap('bwr', 10),
+					cmap=plt.cm.get_cmap('viridis', 10),
 					transform=ccrs.PlateCarree())
 					label = 'ROC area'
 
@@ -451,7 +451,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					var[var<-1.]=np.nan #only sensible values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=-1,vmax=1,
-					cmap=plt.cm.get_cmap('bwr', 10),
+					cmap=plt.cm.get_cmap('viridis', 10),
 					transform=ccrs.PlateCarree())
 					label = 'Correlation'
 
