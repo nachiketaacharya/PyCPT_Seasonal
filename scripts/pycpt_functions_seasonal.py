@@ -3,6 +3,9 @@
 #Notes: be sure it matches version of PyCPT
 #Log:
 
+#Aesthetic upgrades & code improvements applied to plteofs 12/17 - kjch
+
+
 #* Aesthetic upgrades  (plotmap only) -kjch
 # ---Implemented discrete colorbars
 # ---Removed borders btw map sections
