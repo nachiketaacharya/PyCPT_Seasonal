@@ -213,103 +213,54 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 		return
 
 	nmods=len(models)
-	#plt.figure(figsize=(20,10))
-	fig, ax = plt.subplots(figsize=(20,15),sharex=True,sharey=True)
-	tari=tgts[0]
-	model=models[0]
-	monn=mol[0]
 	nsea=len(mons)
-	#Read  grid
-	with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
-		for line in lines_that_contain("XDEF", fp):
-			W = int(line.split()[1])
-			XD= float(line.split()[4])
-	with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
-		for line in lines_that_contain("YDEF", fp):
-			H = int(line.split()[1])
-			YD= float(line.split()[4])
 
-	if mpref=='CCA':
-		with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
-			for line in lines_that_contain("XDEF", fp):
-				Wy = int(line.split()[1])
-				XDy= float(line.split()[4])
-		with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
-			for line in lines_that_contain("YDEF", fp):
-				Hy = int(line.split()[1])
-				YDy= float(line.split()[4])
-		eofy=np.empty([M,Hy,Wy])  #define array for later use
 
-	eofx=np.empty([M,H,W])  #define array for later use
-
-	k=0
-	for tar in mons:
-		k=k+1
-		mon=mol[tgts.index(tar)]
-		ax = plt.subplot(nmods+1,nsea, k, projection=ccrs.PlateCarree()) #nmods+obs
-
-		if mpref=='CCA':  #skip if there are not predictand EOFs (e.g., PCR)
-			ax.set_extent([loni,loni+Wy*XDy,lati,lati+Hy*YDy], ccrs.PlateCarree())
-			#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-			f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tar+'_'+mon+'.dat','rb')
-			#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
-			for mo in range(M):
-				#Now we read the field
-				recl=struct.unpack('i',f.read(4))[0]
-				numval=int(recl/np.dtype('float32').itemsize) #this if for each time/EOF stamp
-				A0=np.fromfile(f,dtype='float32',count=numval)
-				endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
-				eofy[mo,:,:]= np.transpose(A0.reshape((Wy, Hy), order='F'))
-
-			eofy[eofy==-999.]=np.nan #nans
-
-			CS=plt.pcolormesh(np.linspace(loni, loni+Wy*XDy,num=Wy), np.linspace(lati+Hy*YDy, lati, num=Hy), eofy[mode,:,:],
-			vmin=-.1,vmax=.1,
-			cmap=plt.cm.bwr,
-			transform=ccrs.PlateCarree())
-			label = 'EOF charges'
-
-		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
-		states_provinces = feature.NaturalEarthFeature(
-			category='cultural',
-#				name='admin_1_states_provinces_shp',
-			name='admin_0_countries',
-			scale='10m',
-			facecolor='none')
-
-		ax.add_feature(feature.LAND)
-		ax.add_feature(feature.COASTLINE)
-
-		#tick_spacing=0.5
-		#ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
-
-		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-			  linewidth=2, color='gray', alpha=0., linestyle='--')
-		pl.xlabels_top = False
-		pl.xlabels_bottom = False
-		pl.ylabels_left = True
-		pl.ylabels_right = False
-		pl.xformatter = LONGITUDE_FORMATTER
-		pl.yformatter = LATITUDE_FORMATTER
-		ax.add_feature(states_provinces, edgecolor='gray')
-		ax.set_ybound(lower=lati, upper=late)
-
-		if k<=nsea:
-			ax.set_title(tar)
-		#if ax.is_first_col():
-		ax.set_ylabel(model, rotation=90)
+	#plt.figure(figsize=(20,10))
+	#fig, ax = plt.subplots(figsize=(20,15),sharex=True,sharey=True)
+	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(20,140),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	if nsea == 1:
+		ax = [ax]
+	if nmods == 1:
+		ax = [ax]
 
 
 
-	for model in models:
-		for tar in mons:
-			k=k+1
-			mon=mol[tgts.index(tar)]
-			ax = plt.subplot(nmods+1,nsea, k, projection=ccrs.PlateCarree()) #nmods+obs
+	for i in range(nmods):
+		for j in range(nsea):
+
+			tari=tgts[j]
+			model=models[i]
+			monn=mol[tgts.index(mons[j])]
+
+			#Read  grid
+			with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
+				for line in lines_that_contain("XDEF", fp):
+					W = int(line.split()[1])
+					XD= float(line.split()[4])
+			with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
+				for line in lines_that_contain("YDEF", fp):
+					H = int(line.split()[1])
+					YD= float(line.split()[4])
+
+			if mpref=='CCA':
+				with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
+					for line in lines_that_contain("XDEF", fp):
+						Wy = int(line.split()[1])
+						XDy= float(line.split()[4])
+				with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
+					for line in lines_that_contain("YDEF", fp):
+						Hy = int(line.split()[1])
+						YDy= float(line.split()[4])
+				eofy=np.empty([M,Hy,Wy])  #define array for later use
+
+			eofx=np.empty([M,H,W])  #define array for later use
+
+			mon=mol[tgts.index(mons[j])]
 			if mpref=='PCR':
-				ax.set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())  #EOF domains will look different between CCA and PCR if X and Y domains are different
+				ax[j][i].set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())  #EOF domains will look different between CCA and PCR if X and Y domains are different
 			else:
-				ax.set_extent([loni,loni+Wy*XDy,lati,lati+Hy*YDy], ccrs.PlateCarree())
+				ax[j][i].set_extent([loni,loni+Wy*XDy,lati,lati+Hy*YDy], ccrs.PlateCarree())
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
 				category='cultural',
@@ -318,32 +269,32 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 				scale='10m',
 				facecolor='none')
 
-			ax.add_feature(feature.LAND)
-			ax.add_feature(feature.COASTLINE)
+			ax[j][i].add_feature(feature.LAND)
+			ax[j][i].add_feature(feature.COASTLINE)
 
 			#tick_spacing=0.5
 			#ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
 
-			pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-				  linewidth=2, color='gray', alpha=0., linestyle='--')
+			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
 			pl.xlabels_top = False
 			pl.ylabels_left = True
 			pl.ylabels_right = False
 			pl.xlabels_bottom = False
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax.add_feature(states_provinces, edgecolor='gray')
-			ax.set_ybound(lower=lati, upper=late)
-			ax.set_xbound(lower=loni, upper=lone)
+			ax[j][i].add_feature(states_provinces, edgecolor='gray')
+			ax[j][i].set_ybound(lower=lati, upper=late)
+			ax[j][i].set_xbound(lower=loni, upper=lone)
 
-			if k > (nmods+1)*nsea-nsea:
+			if j == nsea - 1:
 				pl.xlabels_bottom = True
 
 			#if ax.is_first_col():
-			ax.set_ylabel(model, rotation=90)
+			ax[j][i].set_ylabel(models[i], rotation=90)
 
 			#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-			f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tar+'_'+mon+'.dat','rb')
+			f=open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
 			#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 			for mo in range(M):
 				#Now we read the field
@@ -355,22 +306,22 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 			eofx[eofx==-999.]=np.nan #nans
 
-			CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
+			CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
 			vmin=-.1,vmax=.1,
-			cmap=plt.cm.bwr,
+			cmap=plt.cm.get_cmap('bwr', 10),
 			transform=ccrs.PlateCarree())
 			label = 'EOF charges'
-			plt.subplots_adjust(hspace=0)
+	plt.subplots_adjust(hspace=0)
 			#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 			#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 			#plt.tight_layout()
 
 			#plt.autoscale(enable=True)
-			plt.subplots_adjust(bottom=0.15, top=0.9)
-			cax = plt.axes([0.2, 0.08, 0.6, 0.04])
-			cbar = plt.colorbar(CS,cax=cax, orientation='horizontal')
-			cbar.set_label(label) #, rotation=270)
-			f.close()
+	#plt.subplots_adjust(bottom=0.15, top=0.9)
+	#cax = plt.axes([0.2, 0.08, 0.6, 0.04])
+	cbar = plt.colorbar(CS,ax=ax, orientation='horizontal', pad=0.01)
+	cbar.set_label(label) #, rotation=270)
+	f.close()
 
 def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, mons):
 	"""A simple function for ploting the statistical scores
@@ -385,12 +336,15 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 	"""
 	nmods=len(models)
 	nsea=len(mons)
-
+	print('dimensions', nmods, nsea)
 	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(20,140),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
 	#fig = plt.figure(figsize=(20,40))
 	#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
 	#ax.append(plt.subplot2grid((nmods+1, nsea), (nmods, 0), colspan=nsea ) )
-
+	if nsea == 1:
+		ax = [ax]
+	if nmods == 1:
+		ax = [ax]
 
 	for i in range(nmods):
 		for j in range(nsea):
@@ -408,7 +362,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 #			ax = plt.subplot(nwk/2, 2, wk, projection=ccrs.PlateCarree())
 
 			#ax = plt.subplot(nmods,nsea, k, projection=ccrs.PlateCarree())
-			ax[i*nsea + j].set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())
+			ax[j][i].set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())
 
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
@@ -418,9 +372,9 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				scale='10m',
 				facecolor='none')
 
-			ax[i*nsea + j].add_feature(feature.LAND)
-			ax[i*nsea + j].add_feature(feature.COASTLINE)
-			pl=ax[i*nsea + j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+			ax[j][i].add_feature(feature.LAND)
+			ax[j][i].add_feature(feature.COASTLINE)
+			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
 			pl.xlabels_top = False
 			pl.ylabels_left = True
@@ -430,13 +384,13 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				pl.xlabels_bottom = True
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax[i*nsea + j].add_feature(states_provinces, edgecolor='gray')
-			ax[i*nsea + j].set_ybound(lower=lati, upper=late)
+			ax[j][i].add_feature(states_provinces, edgecolor='gray')
+			ax[j][i].set_ybound(lower=lati, upper=late)
 
 			if j == 0:
-				ax[i*nsea + j].text(-0.10, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i*nsea + j].transAxes)
+				ax[j][i].text(-0.10, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
 			if i == 0:
-				ax[i*nsea + j].set_title(mons[j])
+				ax[j][i].set_title(mons[j])
 			#for i, axi in enumerate(axes):  # need to enumerate to slice the data
 			#	axi.set_ylabel(model, fontsize=12)
 
@@ -456,7 +410,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					norm=MidpointNormalize(midpoint=0.),
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
-				ax[i*nsea + j].set_title("Deterministic forecast for Week "+str(wk))
+				ax[j][i].set_title("Deterministic forecast for Week "+str(wk))
 				if fprefix == 'RFREQ':
 					label ='Freq Rainy Days (days)'
 				elif fprefix == 'PRCP':
@@ -476,7 +430,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				#define colorbars, depending on each score	--This can be easily written as a function
 				if score == '2AFC':
 					var[var<0]=np.nan #only positive values
-					CS=ax[i*nsea + j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
+					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=100,
 					cmap=plt.cm.get_cmap('bwr', 10),
 					transform=ccrs.PlateCarree())
@@ -484,7 +438,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 
 				if score == 'RocAbove' or score=='RocBelow':
 					var[var<0]=np.nan #only positive values
-					CS=ax[i*nsea + j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
+					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=1,
 					cmap=plt.cm.get_cmap('bwr', 10),
 					transform=ccrs.PlateCarree())
@@ -492,7 +446,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 
 				if score == 'Spearman' or score=='Pearson':
 					var[var<-1.]=np.nan #only sensible values
-					CS=ax[i*nsea + j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
+					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=-1,vmax=1,
 					cmap=plt.cm.get_cmap('bwr', 10),
 					transform=ccrs.PlateCarree())
