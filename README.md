@@ -2,9 +2,10 @@
 For development of PyCPT
 
 PyCPT Authors: 
-         AG Muñoz (agmunoz@iri.columbia.edu), 
-         Andrew W. Robertson (awr@iri.columbia.edu), 
-         Simon Mason (sjm2103@columbia.edu)
+
+AG Muñoz (agmunoz@iri.columbia.edu), 
+Andrew W. Robertson (awr@iri.columbia.edu), 
+Simon Mason (sjm2103@columbia.edu)
          
 Contributing Developers:
          Kyle Hall (kjh2171@columbia.edu)
