@@ -603,7 +603,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 	plt.subplots_adjust(hspace=0)
 	plt.subplots_adjust(bottom=0.15, top=0.9)
 	cax = plt.axes([0.2, 0.08, 0.6, 0.04])
-	cbar = plt.colorbar(CS,cax=cax, orientation='horizontal')
+	cbar = plt.colorbar(CS,cax=cax, orientation='horizontal', pad=0.01)
 	cbar.set_label('Probability (%)') #, rotation=270)
 	f.close()
 
@@ -700,7 +700,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		plt.tight_layout()
 		plt.subplots_adjust(hspace=0)
 		plt.subplots_adjust(bottom=0.15, top=0.9)
-		cbar = fig.colorbar(CS,ax=ax, orientation='horizontal', padding=0.01)
+		cbar = fig.colorbar(CS,ax=ax, orientation='horizontal', pad=0.01)
 
 		# for i, row in enumerate(ax):
 		# 	for j, cell in enumerate(row):
