@@ -3,10 +3,13 @@
 #Notes: be sure it matches version of PyCPT
 #Log:
 
-#Aesthetic upgrades & code improvements applied to plteofs 12/17 - kjch
+#*Aesthetic upgraes to pltmapff, pltmapprob fixed ----- kjch 12/17
+#*Attempted to fix overlapping years thing - switched Ti=Ti & Ti=Ti+1
+#*did some recon , making a guide
 
+#*Aesthetic upgrades & code improvements applied to plteofs ----- kjch 12/16
 
-#* Aesthetic upgrades  (plotmap only) -kjch
+#* Aesthetic upgrades  (plotmap only) ----- kjch 12/15
 # ---Implemented discrete colorbars
 # ---Removed borders btw map sections
 # ---Added Lat/Long lines
@@ -227,7 +230,9 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 	if nmods == 1:
 		ax = [ax]
 
-
+	current_cmap = plt.cm.get_cmap('viridis', 10)
+	current_cmap.set_bad('white',1.0)
+	current_cmap.set_under('white', 1.0)
 
 	for i in range(nmods):
 		for j in range(nsea):
@@ -311,7 +316,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 			CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
 			vmin=-.1,vmax=.1,
-			cmap=plt.cm.get_cmap('viridis', 10),
+			cmap=current_cmap,
 			transform=ccrs.PlateCarree())
 			label = 'EOF charges'
 	plt.subplots_adjust(hspace=0)
@@ -339,7 +344,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 	"""
 	nmods=len(models)
 	nsea=len(mons)
-	print('dimensions', nmods, nsea)
+
 	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(20,140),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
 	#fig = plt.figure(figsize=(20,40))
 	#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
@@ -396,6 +401,9 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				ax[j][i].set_title(mons[j])
 			#for i, axi in enumerate(axes):  # need to enumerate to slice the data
 			#	axi.set_ylabel(model, fontsize=12)
+			current_cmap = plt.cm.get_cmap('viridis', 10)
+			current_cmap.set_bad('white',1.0)
+			current_cmap.set_under('white', 1.0)
 
 			if score == 'CCAFCST_V' or score == 'PCRFCST_V':
 				f=open('../output/'+models[i]+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
@@ -405,9 +413,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				A=np.fromfile(f,dtype='float32',count=numval)
 				var = np.transpose(A.reshape((W, H), order='F'))
 				var[var==-999.]=np.nan #only sensible values
-				current_cmap = plt.cm.get_cmap('bwr', 10)
-				current_cmap.set_bad('white',1.0)
-				current_cmap.set_under('white', 1.0)
+
 				CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					#vmin=-max(np.max(var),np.abs(np.min(var))), #vmax=np.max(var),
 					norm=MidpointNormalize(midpoint=0.),
@@ -435,7 +441,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					var[var<0]=np.nan #only positive values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=100,
-					cmap=plt.cm.get_cmap('viridis', 10),
+					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
 					label = '2AFC (%)'
 
@@ -443,7 +449,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					var[var<0]=np.nan #only positive values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=0,vmax=1,
-					cmap=plt.cm.get_cmap('viridis', 10),
+					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
 					label = 'ROC area'
 
@@ -451,7 +457,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					var[var<-1.]=np.nan #only sensible values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
 					vmin=-1,vmax=1,
-					cmap=plt.cm.get_cmap('viridis', 10),
+					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
 					label = 'Correlation'
 
@@ -590,7 +596,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 				#ax2.set_aspect('auto',adjustable='datalim',anchor='C')
 				CS=ax2.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati,lati+H*YD, num=H), var,
 				vmin=0,vmax=100,
-				cmap=plt.cm.bwr,
+				cmap=plt.cm.viridis,
 				transform=ccrs.PlateCarree())
 				#plt.show(block=False)
 
@@ -628,7 +634,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 			YD= float(line.split()[4])
 
 	#plt.figure(figsize=(15,20))
-	fig, ax = plt.subplots(figsize=(10,nmods*3),sharex=True,sharey=True)
+	fig, ax = plt.subplots(figsize=(20,140),sharex=True,sharey=True)
 	k=0
 	for model in models:
 		k=k+1
@@ -671,7 +677,9 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 
 		if k==1:
 			ax.set_title('Probability (%) of Exceeding '+str(thrs)+" mm/day")
-
+		current_cmap = plt.cm.get_cmap('viridis', 10)
+		current_cmap.set_bad('white',1.0)
+		current_cmap.set_under('white', 1.0)
 		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 			linewidth=2, color='gray', alpha=0.5, linestyle='--')
 		pl.xlabels_top = False
@@ -683,7 +691,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		ax.set_ybound(lower=lati, upper=late)
 		CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), fprob,
 			vmin=0,vmax=100,
-			cmap=plt.cm.bwr,
+			cmap=current_cmap,
 			transform=ccrs.PlateCarree())
 		label = 'Probability (%) of Exceedance'
 
@@ -692,8 +700,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		plt.tight_layout()
 		plt.subplots_adjust(hspace=0)
 		plt.subplots_adjust(bottom=0.15, top=0.9)
-		cax = plt.axes([0.2, 0.08, 0.6, 0.04])
-		cbar = plt.colorbar(CS,cax=cax, orientation='horizontal')
+		cbar = fig.colorbar(CS,ax=ax, orientation='horizontal', padding=0.01)
 
 		# for i, row in enumerate(ax):
 		# 	for j, cell in enumerate(row):
@@ -741,7 +748,7 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 	i,j = np.unravel_index(a.argmin(),a.shape)   #i:latitude   j:longitude
 
 	#Now compute stuff and plot
-	plt.figure(figsize=(15,15))
+	#plt.figure(figsize=(15,15))
 
 	k=0
 	for model in models:
@@ -816,35 +823,35 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 		#plt.rc('text', usetex=True)
 		#plt.rc('font', family='serif')
 
-		plt.subplot(1, 2, 1)
-		plt.plot(x, t.sf(x, dof, loc=muc, scale=scalec)*100,'b-', lw=5, alpha=0.6, label='clim')
-		plt.plot(x, t.sf(x, dof, loc=muf, scale=scalef)*100,'r-', lw=5, alpha=0.6, label='fcst')
-		plt.axvline(x=thrs, color='k', linestyle='--')
-		plt.plot(thrs, fprobth,'ok')
-		plt.plot(thrs, cprobth,'ok')
-		plt.text(thrs+0.05, cprobth, str(cprobth)+'%', **style)
-		plt.text(thrs+0.05, fprobth, str(fprobth)+'%', **style)
-		#plt.text(0.1, 10, r'$\frac{P(fcst)}{P(clim)}=$'+str(round(oddsrc,1)), **style)
-		plt.text(min(t.ppf(0.0001, dof, loc=muf, scale=scalef),t.ppf(0.0001, dof, loc=muc, scale=scalec)), -20, 'P(fcst)/P(clim)='+str(round(oddsrc,1)), **style)
-		plt.legend(loc='best', frameon=False)
+		#plt.subplot(1, 2, 1)
+		ax[0].plot(x, t.sf(x, dof, loc=muc, scale=scalec)*100,'b-', lw=5, alpha=0.6, label='clim')
+		ax[0].plot(x, t.sf(x, dof, loc=muf, scale=scalef)*100,'r-', lw=5, alpha=0.6, label='fcst')
+		ax[0].axvline(x=thrs, color='k', linestyle='--')
+		ax[0].plot(thrs, fprobth,'ok')
+		ax[0].plot(thrs, cprobth,'ok')
+		ax[0].text(thrs+0.05, cprobth, str(cprobth)+'%', **style)
+		ax[0].text(thrs+0.05, fprobth, str(fprobth)+'%', **style)
+		#ax[0].text(0.1, 10, r'$\frac{P(fcst)}{P(clim)}=$'+str(round(oddsrc,1)), **style)
+		ax[0].text(min(t.ppf(0.0001, dof, loc=muf, scale=scalef),t.ppf(0.0001, dof, loc=muc, scale=scalec)), -20, 'P(fcst)/P(clim)='+str(round(oddsrc,1)), **style)
+		ax[0].legend(loc='best', frameon=False)
 		# Add title and axis names
-		plt.title('Probabilities of Exceedance')
-		plt.xlabel('Rainfall')
-		plt.ylabel('Probability (%)')
+		ax[0].title('Probabilities of Exceedance')
+		ax[0].xlabel('Rainfall')
+		ax[0].ylabel('Probability (%)')
 		# Limits for the Y axis
-		plt.xlim(min(t.ppf(0.00001, dof, loc=muf, scale=scalef),t.ppf(0.00001, dof, loc=muc, scale=scalec)),max(t.ppf(0.9999, dof, loc=muf, scale=scalef),t.ppf(0.9999, dof, loc=muc, scale=scalec)))
+		ax[0].xlim(min(t.ppf(0.00001, dof, loc=muf, scale=scalef),t.ppf(0.00001, dof, loc=muc, scale=scalec)),max(t.ppf(0.9999, dof, loc=muf, scale=scalef),t.ppf(0.9999, dof, loc=muc, scale=scalec)))
 
-		plt.subplot(1, 2, 2)
-		plt.plot(x, cpdf,'b-', lw=5, alpha=0.6, label='clim')
-		plt.plot(x, fpdf,'r-', lw=5, alpha=0.6, label='fcst')
-		plt.axvline(x=thrs, color='k', linestyle='--')
-		plt.legend(loc='best', frameon=False)
+		#ax[1].subplot(1, 2, 2)
+		ax[1].plot(x, cpdf,'b-', lw=5, alpha=0.6, label='clim')
+		ax[1].plot(x, fpdf,'r-', lw=5, alpha=0.6, label='fcst')
+		ax[1].axvline(x=thrs, color='k', linestyle='--')
+		ax[1].legend(loc='best', frameon=False)
 		# Add title and axis names
-		plt.title('Probability Density Functions')
-		plt.xlabel('Rainfall')
-		plt.ylabel('')
+		ax[1].title('Probability Density Functions')
+		ax[1].xlabel('Rainfall')
+		ax[1].ylabel('')
 		# Limits for the Y axis
-		plt.xlim(min(t.ppf(0.00001, dof, loc=muf, scale=scalef),t.ppf(0.00001, dof, loc=muc, scale=scalec)),max(t.ppf(0.9999, dof, loc=muf, scale=scalef),t.ppf(0.9999, dof, loc=muc, scale=scalec)))
+		ax[1].xlim(min(t.ppf(0.00001, dof, loc=muf, scale=scalef),t.ppf(0.00001, dof, loc=muc, scale=scalec)),max(t.ppf(0.9999, dof, loc=muf, scale=scalef),t.ppf(0.9999, dof, loc=muc, scale=scalec)))
 
 
 	plt.subplots_adjust(hspace=0)
@@ -1404,13 +1411,11 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 
 	ens  =np.empty([nmods,T,H,W])  #define array for later use
 
-	k=-1
-	for model in models:
-		k=k+1 #model
+	for i in range(nmods):
 		memb0=np.empty([T,H,W])  #define array for later use
 
 		#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-		f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 		for it in range(T):
 			#Now we read the field
@@ -1422,7 +1427,7 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 
 		memb0[memb0==-999.]=np.nan #identify NaNs
 
-		ens[k,:,:,:]=memb0
+		ens[i,:,:,:]=memb0
 
 	NG=np.nanmean(ens, axis=0)  #axis 0 is ensemble member
 	writeCPT(NG,'../input/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
@@ -1449,10 +1454,10 @@ def writeCPT(var,outfile,models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,mo
 	#Read grads file to get needed coordinate arrays
 	W, Wi, XD, H, Hi, YD, T, Ti, TD = readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr)
 	if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
-		Ti=Ti
+		Ti=Ti+1 #kjch - what does Ti do? shouldnt Ti=Ti+1 if its cross year?
 		xyear=True  #flag a cross-year season
 	else:
-		Ti=Ti+1
+		Ti=Ti #kjch - switched Ti=Ti + 1 and  Ti=Ti 12/17 - Ti+1 if its cross year makes more sense
 		xyear=False
 
 	Tarr = np.arange(Ti, Ti+T)
