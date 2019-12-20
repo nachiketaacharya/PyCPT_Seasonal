@@ -230,7 +230,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 	if nmods == 1:
 		ax = [ax]
 
-	current_cmap = plt.cm.get_cmap('viridis', 10)
+	current_cmap = plt.cm.get_cmap('RdYlBu', 10)
 	current_cmap.set_bad('white',1.0)
 	current_cmap.set_under('white', 1.0)
 
@@ -401,7 +401,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				ax[j][i].set_title(mons[j])
 			#for i, axi in enumerate(axes):  # need to enumerate to slice the data
 			#	axi.set_ylabel(model, fontsize=12)
-			current_cmap = plt.cm.get_cmap('viridis', 10)
+			current_cmap = plt.cm.get_cmap('RdYlBu', 10)
 			current_cmap.set_bad('white',1.0)
 			current_cmap.set_under('white', 1.0)
 
@@ -596,7 +596,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 				#ax2.set_aspect('auto',adjustable='datalim',anchor='C')
 				CS=ax2.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati,lati+H*YD, num=H), var,
 				vmin=0,vmax=100,
-				cmap=plt.cm.viridis,
+				cmap=plt.cm.RdYlBu,
 				transform=ccrs.PlateCarree())
 				#plt.show(block=False)
 
@@ -677,7 +677,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 
 		if k==1:
 			ax.set_title('Probability (%) of Exceeding '+str(thrs)+" mm/day")
-		current_cmap = plt.cm.get_cmap('viridis', 10)
+		current_cmap = plt.cm.get_cmap('RdYlBu', 10)
 		current_cmap.set_bad('white',1.0)
 		current_cmap.set_under('white', 1.0)
 		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -835,23 +835,26 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 		ax[0].text(min(t.ppf(0.0001, dof, loc=muf, scale=scalef),t.ppf(0.0001, dof, loc=muc, scale=scalec)), -20, 'P(fcst)/P(clim)='+str(round(oddsrc,1)), **style)
 		ax[0].legend(loc='best', frameon=False)
 		# Add title and axis names
-		ax[0].title('Probabilities of Exceedance')
-		ax[0].xlabel('Rainfall')
-		ax[0].ylabel('Probability (%)')
+		ax[0].set_title('Probabilities of Exceedance')
+		ax[0].set_xlabel('Rainfall')
+		ax[0].set_ylabel('Probability (%)')
 		# Limits for the Y axis
-		ax[0].xlim(min(t.ppf(0.00001, dof, loc=muf, scale=scalef),t.ppf(0.00001, dof, loc=muc, scale=scalec)),max(t.ppf(0.9999, dof, loc=muf, scale=scalef),t.ppf(0.9999, dof, loc=muc, scale=scalec)))
-
+		#ax[0].set_xlim(left=min(t.ppf(0.001, dof, loc=muf, scale=scalef),t.ppf(0.001, dof, loc=muc, scale=scalec)),right=max(t.ppf(0.99, dof, loc=muf, scale=scalef),t.ppf(0.99, dof, loc=muc, scale=scalec)))
+		#ax[0].set_ylim(left=0, right=1)
 		#ax[1].subplot(1, 2, 2)
 		ax[1].plot(x, cpdf,'b-', lw=5, alpha=0.6, label='clim')
 		ax[1].plot(x, fpdf,'r-', lw=5, alpha=0.6, label='fcst')
 		ax[1].axvline(x=thrs, color='k', linestyle='--')
 		ax[1].legend(loc='best', frameon=False)
 		# Add title and axis names
-		ax[1].title('Probability Density Functions')
-		ax[1].xlabel('Rainfall')
-		ax[1].ylabel('')
+		ax[1].set_title('Probability Density Functions')
+		ax[1].set_xlabel('Rainfall')
+		ax[1].set_ylabel('')
+		#ax[1].set_ylim(left=0, right=1)
+
 		# Limits for the Y axis
-		ax[1].xlim(min(t.ppf(0.00001, dof, loc=muf, scale=scalef),t.ppf(0.00001, dof, loc=muc, scale=scalec)),max(t.ppf(0.9999, dof, loc=muf, scale=scalef),t.ppf(0.9999, dof, loc=muc, scale=scalec)))
+		#print()
+		ax[1].set_xlim(left=min(t.ppf(0.001, dof, loc=muf, scale=scalef),t.ppf(0.001, dof, loc=muc, scale=scalec)),right=max(t.ppf(0.99, dof, loc=muf, scale=scalef),t.ppf(0.99, dof, loc=muc, scale=scalec)))
 
 
 	plt.subplots_adjust(hspace=0)
