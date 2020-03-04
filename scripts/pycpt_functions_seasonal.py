@@ -49,8 +49,10 @@ import matplotlib.colors as colors
 import matplotlib.ticker as ticker
 from matplotlib.colors import LinearSegmentedColormap
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import cartopy.feature as cfeature
 import fileinput
 import numpy as np
+import matplotlib as mpl
 
 warnings.filterwarnings("ignore")
 
@@ -68,6 +70,26 @@ def lines_that_end_with(string, fp):
 
 def exceedprob(x,dof,lo,sc):
 	return t.sf(x, dof, loc=lo, scale=sc)*100
+
+def make_cmap(x):
+	colors = [(238, 43, 51),
+	(255, 57, 67),
+	(253, 123, 91),
+	(248, 175, 123),
+	(254, 214, 158),
+	(252, 239, 188),
+	(255, 254, 241),
+	(244, 255,255),
+	(187, 252, 255),
+	(160, 235, 255),
+	(123, 210, 255),
+	(89, 179, 238),
+	(63, 136, 254),
+	(52, 86, 254)
+	]
+	colors = [ (colors[i][0] / 255.0, colors[i][1] / 255.0, colors[i][2] / 255.0) for i in range(len(colors))]
+	colors.reverse()
+	return LinearSegmentedColormap.from_list( "matlab_clone", colors, N=x)
 
 class MidpointNormalize(colors.Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -169,6 +191,10 @@ def pltdomain(loni1,lone1,lati1,late1,loni2,lone2,lati2,late2):
 		name='admin_0_countries',
 		scale='10m',
 		facecolor='none')
+	#ax.add_feature(cfeature.LAND)
+    #ax.add_feature(cfeature.COASTLINE)
+    #ax.add_feature(states_provinces, edgecolor='gray')
+
 
 	fig = plt.subplots(figsize=(15,15), subplot_kw=dict(projection=ccrs.PlateCarree()))
 	loni = [loni1,loni2]
@@ -183,10 +209,12 @@ def pltdomain(loni1,lone1,lati1,late1,loni2,lone2,lati2,late2):
 		ax.set_extent([loni[i],lone[i],lati[i],late[i]], ccrs.PlateCarree())
 
 		# Put a background image on for nice sea rendering.
-		ax.stock_img()
+		#ax.stock_img()
 
 		ax.add_feature(feature.LAND)
-		ax.add_feature(feature.COASTLINE)
+		#ax.add_feature(feature.COASTLINE)
+		ax.add_feature(feature.OCEAN)
+
 		ax.set_title(title[i]+" domain")
 		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
@@ -194,8 +222,13 @@ def pltdomain(loni1,lone1,lati1,late1,loni2,lone2,lati2,late2):
 		pl.ylabels_left = False
 		pl.xformatter = LONGITUDE_FORMATTER
 		pl.yformatter = LATITUDE_FORMATTER
-		ax.add_feature(states_provinces, edgecolor='gray')
-		plt.savefig("0_domain.png",dpi=300)
+		ax.add_feature(states_provinces, edgecolor='black')
+		#states_provinces = cfeature.NaturalEarthFeature(
+        #category='cultural',
+        #name='admin_1_states_provinces_lines',
+        #scale='50m',
+        #facecolor='none')
+		plt.savefig("0_domain.png",dpi=300) #SAVE_FILE 0_domain.png
 	plt.show()
 
 def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,mons):
@@ -230,7 +263,8 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 	if nmods == 1:
 		ax = [ax]
 
-	current_cmap = plt.cm.get_cmap('RdYlBu', 10)
+	#current_cmap = plt.cm.get_cmap('RdYlBu', 14)
+	current_cmap = make_cmap(14)
 	current_cmap.set_bad('white',1.0)
 	current_cmap.set_under('white', 1.0)
 
@@ -278,7 +312,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 				facecolor='none')
 
 			ax[j][i].add_feature(feature.LAND)
-			ax[j][i].add_feature(feature.COASTLINE)
+			#ax[j][i].add_feature(feature.COASTLINE)
 
 			#tick_spacing=0.5
 			#ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
@@ -295,11 +329,16 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			ax[j][i].set_ybound(lower=lati, upper=late)
 			ax[j][i].set_xbound(lower=loni, upper=lone)
 
+
+			if j == 0:
+				ax[j][i].text(-0.10, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
+			if i == 0:
+				ax[j][i].set_title(mons[j])
 			if j == nsea - 1:
 				pl.xlabels_bottom = True
+			if i == nmods -1:
+				pl.ylabels_right=True
 
-			#if ax.is_first_col():
-			ax[j][i].set_ylabel(models[i], rotation=90)
 
 			#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
 			f=open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
@@ -315,7 +354,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			eofx[eofx==-999.]=np.nan #nans
 
 			CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
-			vmin=-.1,vmax=.1,
+			vmin=-.15,vmax=.15,
 			cmap=current_cmap,
 			transform=ccrs.PlateCarree())
 			label = 'EOF charges'
@@ -327,7 +366,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			#plt.autoscale(enable=True)
 	#plt.subplots_adjust(bottom=0.15, top=0.9)
 	#cax = plt.axes([0.2, 0.08, 0.6, 0.04])
-	cbar = plt.colorbar(CS,ax=ax, orientation='horizontal', pad=0.01)
+	cbar = plt.colorbar(CS,ax=ax, orientation='horizontal', pad=0.01, ticks= [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9])
 	cbar.set_label(label) #, rotation=270)
 	f.close()
 
@@ -336,7 +375,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 
 	PARAMETERS
 	----------
-		score: the score
+		score: the score - this is one of ['Pearson','Spearman','2AFC','RocAbove','RocBelow']
 		loni: western longitude
 		lone: eastern longitude
 		lati: southern latitude
@@ -353,6 +392,14 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 		ax = [ax]
 	if nmods == 1:
 		ax = [ax]
+	if score not in ['Pearson','Spearman']:
+		#urrent_cmap = plt.cm.get_cmap('RdYlBu', 10 )
+		current_cmap = make_cmap(10)
+	else:
+		#current_cmap = plt.cm.get_cmap('RdYlBu', 14 )
+		current_cmap = make_cmap(14)
+	current_cmap.set_bad('white',1.0)
+	current_cmap.set_under('white', 1.0)
 
 	for i in range(nmods):
 		for j in range(nsea):
@@ -381,7 +428,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				facecolor='none')
 
 			ax[j][i].add_feature(feature.LAND)
-			ax[j][i].add_feature(feature.COASTLINE)
+			#ax[j][i].add_feature(feature.COASTLINE)
 			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
 			pl.xlabels_top = False
@@ -401,9 +448,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				ax[j][i].set_title(mons[j])
 			#for i, axi in enumerate(axes):  # need to enumerate to slice the data
 			#	axi.set_ylabel(model, fontsize=12)
-			current_cmap = plt.cm.get_cmap('RdYlBu', 10)
-			current_cmap.set_bad('white',1.0)
-			current_cmap.set_under('white', 1.0)
+
 
 			if score == 'CCAFCST_V' or score == 'PCRFCST_V':
 				f=open('../output/'+models[i]+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
@@ -456,7 +501,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				if score == 'Spearman' or score=='Pearson':
 					var[var<-1.]=np.nan #only sensible values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
-					vmin=-1,vmax=1,
+					vmin=-1.05,vmax=1.05,
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
 					label = 'Correlation'
@@ -469,7 +514,11 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 	#plt.subplots_adjust(hspace=0.0)
 	#cax = plt.axes([0.0, 0.0, 0.30, 0.02])
 	#cbar = fig.colorbar(CS, cax=ax[len(ax)-1], orientation='horizontal')
-	cbar = fig.colorbar(CS, ax=ax, orientation='horizontal', pad=0.01)
+	if score in ['Pearson','Spearman']:
+		 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
+		 cbar = fig.colorbar(CS, ax=ax, orientation='horizontal', pad=0.01, ticks=bounds)
+	else:
+		cbar = fig.colorbar(CS, ax=ax, orientation='horizontal', pad=0.01)
 	cbar.set_label(label) #, rotation=270)\
 	f.close()
 
@@ -677,7 +726,8 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 
 		if k==1:
 			ax.set_title('Probability (%) of Exceeding '+str(thrs)+" mm/day")
-		current_cmap = plt.cm.get_cmap('RdYlBu', 10)
+		#current_cmap = plt.cm.get_cmap('RdYlBu', 10)
+		current_cmap = make_cmap(10)
 		current_cmap.set_bad('white',1.0)
 		current_cmap.set_under('white', 1.0)
 		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -875,7 +925,8 @@ def GetHindcasts(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, ndays, tar, model,
 			force_download = True
 	if force_download:
 		#dictionary:
-		dic = { 'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+		dic = { 'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays) +'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 				'CMC2-CanCM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC2-CanCM4/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 				'COLA-RSMAS-CCSM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.COLA-RSMAS-CCSM4/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 				'GFDL-CM2p5-FLOR-A06': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-A06/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -900,14 +951,15 @@ def GetHindcasts_RFREQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, wetday_thres
 			force_download = True
 	if force_download:
 		#dictionary:
-		dic = { 'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'CMC2-CanCM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC2-CanCM4/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'COLA-RSMAS-CCSM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.COLA-RSMAS-CCSM4/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p5-FLOR-A06': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-A06/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+		dic = {	'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'CMC2-CanCM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC2-CanCM4/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'COLA-RSMAS-CCSM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.COLA-RSMAS-CCSM4/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'GFDL-CM2p5-FLOR-A06': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-A06/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 		}
 		# calls curl to download data
 		url=dic[model]
@@ -925,8 +977,7 @@ def GetHindcasts_UQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 			force_download = True
 	if force_download:
 		#dictionary:
-		dic = {'NCEP-CFSv2': 'http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.ENSEMBLE/.PGBF/.pressure_level/.VGRD/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.ENSEMBLE/.PGBF/.pressure_level/.SPFH/mul/P/850/VALUE/S/%2812%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-		}
+
 		# calls curl to download data
 		url=dic[model]
 		print("\n Hindcasts URL: \n\n "+url)
@@ -1005,7 +1056,8 @@ def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, ndays, model
 			force_download = True
 	if force_download:
 		#dictionary:
-		dic = {	'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.FORECAST/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+		dic = {	'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.FORECAST/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 			    'CMC2-CanCM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC2-CanCM4/.FORECAST/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 				'COLA-RSMAS-CCSM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.COLA-RSMAS-CCSM4/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 				'GFDL-CM2p5-FLOR-A06': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-A06/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -1017,6 +1069,7 @@ def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, ndays, model
 		# calls curl to download data
 		url=dic[model]
 		print("\n Forecast URL: \n\n "+url)
+		
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download):
@@ -1081,7 +1134,7 @@ def GetForecast_RFREQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, wetday
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 
-def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,elo2,fprefix,mpref,tar,ntrain,MOS,station):
+def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,elo2,fprefix,mpref,tar,ntrain,MOS,station, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max):
 		"""Function to write CPT namelist file
 
 		"""
@@ -1120,9 +1173,9 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write(str(elo1)+'\n')
 		if MOS=='CCA' or MOS=='PCR':
 			# Minimum number of X modes
-			f.write("1\n")
+			f.write("{}\n".format(xmodes_min))
 			# Maximum number of X modes
-			f.write("10\n")
+			f.write("{}\n".format(xmodes_max))
 
 			# Opens forecast (X) file
 			f.write("3\n")
@@ -1130,7 +1183,10 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write(file)
 			#Start forecast:
 			f.write("223\n")
-			f.write(str(fyr)+"\n")
+			if monf=="Dec":
+				f.write(str(fyr+1)+"\n")
+			else:
+				f.write(str(fyr)+"\n")
 
 		# Opens Y input file
 		f.write("2\n")
@@ -1147,14 +1203,14 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write(str(elo2)+'\n')
 		if MOS=='CCA':
 			# Minimum number of Y modes
-			f.write("1\n")
+			f.write("{}\n".format(ymodes_min))
 			# Maximum number of Y modes
-			f.write("10\n")
+			f.write("{}\n".format(ymodes_max))
 
 			# Minimum number of CCA modes
-			f.write("1\n")
+			f.write("{}\n".format(ccamodes_min))
 			# Maximum number of CCAmodes
-			f.write("5\n")
+			f.write("{}\n".format(ccamodes_max))
 
 		# X training period
 		f.write("4\n")
@@ -1164,6 +1220,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write("5\n")
 		# First year of Y training period
 		f.write("1983\n")
+
 
 		# Goodness index
 		f.write("531\n")
@@ -1289,6 +1346,8 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RocAbove_'+tar+'_'+mon+'\n'
 		f.write(file)
 
+
+
 		if MOS=='CCA' or MOS=='PCR':   #DO NOT USE CPT to compute probabilities if MOS='None' --use IRIDL for direct counting
 			#######FORECAST(S)	!!!!!
 			# Probabilistic (3 categories) maps
@@ -1376,6 +1435,8 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			file='../output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Stop saving  (not needed in newest version of CPT)
+
+
 
 		# Exit
 		f.write("0\n")
