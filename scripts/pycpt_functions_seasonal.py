@@ -53,6 +53,7 @@ import cartopy.feature as cfeature
 import fileinput
 import numpy as np
 import matplotlib as mpl
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 warnings.filterwarnings("ignore")
 
@@ -257,7 +258,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 	#plt.figure(figsize=(20,10))
 	#fig, ax = plt.subplots(figsize=(20,15),sharex=True,sharey=True)
-	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(20,140),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(6,6*nmods),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
 	if nsea == 1:
 		ax = [ax]
 	if nmods == 1:
@@ -322,16 +323,16 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			pl.xlabels_top = False
 			pl.ylabels_left = True
 			pl.ylabels_right = False
-			pl.xlabels_bottom = False
+			pl.xlabels_bottom = True
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax[j][i].add_feature(states_provinces, edgecolor='gray')
+			ax[j][i].add_feature(states_provinces, edgecolor='black')
 			ax[j][i].set_ybound(lower=lati, upper=late)
 			ax[j][i].set_xbound(lower=loni, upper=lone)
 
 
 			if j == 0:
-				ax[j][i].text(-0.10, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
+				ax[j][i].text(-0.42, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
 			if i == 0:
 				ax[j][i].set_title(mons[j])
 			if j == nsea - 1:
@@ -354,11 +355,25 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			eofx[eofx==-999.]=np.nan #nans
 
 			CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
-			vmin=-.15,vmax=.15,
+			vmin=-1.05, vmax=1.05,
 			cmap=current_cmap,
 			transform=ccrs.PlateCarree())
 			label = 'EOF charges'
-	plt.subplots_adjust(hspace=0)
+
+			axins = inset_axes(ax[j][i],
+                   width="5%",  # width = 5% of parent_bbox width
+                   height="100%",  # height : 50%
+                   loc='center left',
+                   bbox_to_anchor=(-0.22, 0., 1, 1),
+                   bbox_transform=ax[j][i].transAxes,
+                   borderpad=0.1,
+                   )
+			cbar = plt.colorbar(CS,ax=ax[j][i], cax=axins, orientation='vertical', pad=0.01, ticks= [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9])
+			#cbar.set_label(label) #, rotation=270)
+			axins.yaxis.tick_left()
+			f.close()
+
+	plt.tight_layout()
 			#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 			#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 			#plt.tight_layout()
@@ -366,9 +381,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			#plt.autoscale(enable=True)
 	#plt.subplots_adjust(bottom=0.15, top=0.9)
 	#cax = plt.axes([0.2, 0.08, 0.6, 0.04])
-	cbar = plt.colorbar(CS,ax=ax, orientation='horizontal', pad=0.01, ticks= [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9])
-	cbar.set_label(label) #, rotation=270)
-	f.close()
+
 
 def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, mons):
 	"""A simple function for ploting the statistical scores
@@ -384,7 +397,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 	nmods=len(models)
 	nsea=len(mons)
 
-	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(20,140),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(6, 6*nmods),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
 	#fig = plt.figure(figsize=(20,40))
 	#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
 	#ax.append(plt.subplot2grid((nmods+1, nsea), (nmods, 0), colspan=nsea ) )
@@ -434,16 +447,16 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 			pl.xlabels_top = False
 			pl.ylabels_left = True
 			pl.ylabels_right = False
-			pl.xlabels_bottom = False
-			if i == nmods - 1:
-				pl.xlabels_bottom = True
+			#pl.xlabels_bottom = False
+			#if i == nmods - 1: change so long vals in every plot
+			pl.xlabels_bottom = True
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax[j][i].add_feature(states_provinces, edgecolor='gray')
+			ax[j][i].add_feature(states_provinces, edgecolor='black')
 			ax[j][i].set_ybound(lower=lati, upper=late)
 
 			if j == 0:
-				ax[j][i].text(-0.10, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
+				ax[j][i].text(-0.42, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
 			if i == 0:
 				ax[j][i].set_title(mons[j])
 			#for i, axi in enumerate(axes):  # need to enumerate to slice the data
@@ -490,6 +503,13 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					transform=ccrs.PlateCarree())
 					label = '2AFC (%)'
 
+				if score == 'RMSE':
+					var[var<0]=np.nan #only positive values
+					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
+					vmin=0,vmax=1000,
+					cmap=plt.get_cmap('Reds', 10),
+					transform=ccrs.PlateCarree())
+					label = 'RMSE'
 				if score == 'RocAbove' or score=='RocBelow':
 					var[var<0]=np.nan #only positive values
 					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), var,
@@ -510,17 +530,36 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 				#plt.tight_layout()
 				#plt.autoscale(enable=True)
-	plt.subplots_adjust(hspace=0.0)
+	#plt.subplots_adjust(hspace=0.0)
 	#plt.subplots_adjust(hspace=0.0)
 	#cax = plt.axes([0.0, 0.0, 0.30, 0.02])
 	#cbar = fig.colorbar(CS, cax=ax[len(ax)-1], orientation='horizontal')
-	if score in ['Pearson','Spearman']:
-		 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
-		 cbar = fig.colorbar(CS, ax=ax, orientation='horizontal', pad=0.01, ticks=bounds)
-	else:
-		cbar = fig.colorbar(CS, ax=ax, orientation='horizontal', pad=0.01)
-	cbar.set_label(label) #, rotation=270)\
-	f.close()
+
+			axins = inset_axes(ax[j][i],
+                   width="5%",  # width = 5% of parent_bbox width
+                   height="100%",  # height : 50%
+                   loc='center left',
+                   bbox_to_anchor=(-0.22, 0., 1, 1),
+                   bbox_transform=ax[j][i].transAxes,
+                   borderpad=0.1,
+                   )
+			if score in ['Pearson','Spearman']:
+				 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
+				 cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
+			elif score == '2AFC':
+				bounds = [10*gt for gt in range(1,10, 2)]
+				cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+			elif score == 'RMSE':
+				bounds = [10*gt for gt in range(1,10, 2)]
+				cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+			else:
+				bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
+				cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+			#cbar.set_label(label) #, rotation=270)\
+			axins.yaxis.tick_left()
+			f.close()
+
+	plt.tight_layout()
 
 def skilltab(score,wknam,lon1,lat1,lat2,lon2,loni,lone,lati,late,fprefix,mpref,training_season,mon,fday,nwk):
 	"""A simple function for ploting probabilities of exceedance and PDFs (for a given threshold)
@@ -1069,7 +1108,7 @@ def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, ndays, model
 		# calls curl to download data
 		url=dic[model]
 		print("\n Forecast URL: \n\n "+url)
-		
+
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download):
@@ -1335,15 +1374,22 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		# cross-validated skill maps
 		f.write("413\n")
 		# save RocBelow score
-		f.write("10\n")
+		f.write("15\n")
 		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RocBelow_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# cross-validated skill maps
 		f.write("413\n")
 		# save RocAbove score
-		f.write("11\n")
+		f.write("16\n")
 		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RocAbove_'+tar+'_'+mon+'\n'
+		f.write(file)
+
+		# cross-validated skill maps
+		f.write("413\n")
+		# save RocAbove score
+		f.write("7\n")
+		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RMSE_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 
