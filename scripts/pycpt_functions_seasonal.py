@@ -608,7 +608,7 @@ def read_forecast(fcst_type, model, predictand, mpref, mons, mon, fyr):
 	return lats, longs, all_vals
 
 
-def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr, cbar_loc, fancy):
+def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr):
 	"""A simple function for ploting the statistical scores
 
 	PARAMETERS
@@ -619,6 +619,7 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr, c
 		lati: southern latitude
 		late: northern latitude
 	"""
+	cbar_loc, fancy = 'bottom', True
 	nmods=len(models)
 	nsea=len(mons)
 	if fancy:
