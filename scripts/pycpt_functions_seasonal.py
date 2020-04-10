@@ -608,7 +608,7 @@ def read_forecast(fcst_type, model, predictand, mpref, mons, mon, fyr):
 	return lats, longs, all_vals
 
 
-def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr, cbar_loc, fancy):
+def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr):
 	"""A simple function for ploting the statistical scores
 
 	PARAMETERS
@@ -619,6 +619,7 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr, c
 		lati: southern latitude
 		late: northern latitude
 	"""
+	cbar_loc, fancy = 'bottom', True
 	nmods=len(models)
 	nsea=len(mons)
 	if fancy:
@@ -696,15 +697,15 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr, c
 			current_cmap.set_bad('white',1.0)
 			current_cmap.set_under('white', 1.0)
 			#current_cmap = plt.get_cmap('YlOrBr')
-			current_cmap_copper = plt.get_cmap('Purples')
+			current_cmap_copper = plt.get_cmap('YlOrRd', 9)
 			#current_cmap_copper.set_bad('white',1.0)
 			current_cmap_copper.set_under('white', 1.0)
 			#current_cmap = plt.get_cmap('Greys')
-			current_cmap_binary = make_cmap_gray(1000)
+			current_cmap_binary = plt.get_cmap('Greens', 4)
 			#current_cmap_binary.set_bad('white',1.0)
 			current_cmap_binary.set_under('white', 1.0)
 			#current_cmap = plt.get_cmap('GnBu')
-			current_cmap_ylgn = plt.get_cmap('Greens')
+			current_cmap_ylgn = plt.get_cmap('Blues', 9)
 			#current_cmap_ylgn.set_bad('white',1.0)
 			current_cmap_ylgn.set_under('white', 1.0)
 
@@ -783,20 +784,20 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr, c
 				else:
 					#fancy probabilistic
 					CS1 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_bn,
-						vmin=33.34, #vmax=100,
+						vmin=35, vmax=80,
 						#norm=MidpointNormalize(midpoint=0.),
 						cmap=current_cmap_copper)
 					CS2 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_n,
-						vmin=33.34, #vmax=100,
+						vmin=35, vmax=55,
 						#norm=MidpointNormalize(midpoint=0.),
 						cmap=current_cmap_binary)
 					CS3 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_an,
-						vmin=33.34, #vmax=100,
+						vmin=35, vmax=80,
 						#norm=MidpointNormalize(midpoint=0.),
 						cmap=current_cmap_ylgn)
 
-					bounds = [round(5*gt,1) for gt in range(0,20)]
-					nbounds = [round(10*gt,1) for gt in range(0,10)]
+					bounds = [40,45,50,55,60,65,70,75]
+					nbounds = [40,45,50]
 					if cbar_loc == 'left':
 						#fancy probabilistic cb left
 						axins_f = inset_axes(ax[j][i],
@@ -902,7 +903,7 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr, c
 						cbar_bdet.set_label(labels[i])
 				else:
 					#not fancy probabilistic
-					bounds = [round(10*gt,1) for gt in range(0,10)]
+					bounds = [40,45,50,55,60,65,70,75]
 					if cbar_loc == 'left':
 						var = ng_probfcst_by_season[j][i-1]
 						CS_nf = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
