@@ -72,6 +72,18 @@ def lines_that_end_with(string, fp):
 def exceedprob(x,dof,lo,sc):
 	return t.sf(x, dof, loc=lo, scale=sc)*100
 
+def make_cmap_blue(x):
+	colors = [(244, 255,255),
+	(187, 252, 255),
+	(160, 235, 255),
+	(123, 210, 255),
+	(89, 179, 238),
+	(63, 136, 254),
+	(52, 86, 254)]
+	colors = [ (colors[i][0] / 255.0, colors[i][1] / 255.0, colors[i][2] / 255.0) for i in range(len(colors))]
+	#colors.reverse()
+	return LinearSegmentedColormap.from_list( "matlab_clone", colors, N=x)
+
 def make_cmap(x):
 	colors = [(238, 43, 51),
 	(255, 57, 67),
@@ -97,6 +109,85 @@ def make_cmap_gray(x):
 	colors = [ (colors[i][0] / 255.0, colors[i][1] / 255.0, colors[i][2] / 255.0) for i in range(len(colors))]
 	colors.reverse()
 	return LinearSegmentedColormap.from_list( "matlab_clone", colors, N=x)
+
+def setup_params(PREDICTOR,obs,MOS,tini,tend, tgts):
+	"""PyCPT setup"""
+	#global rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays
+	days_in_month_dict = {"Jan": 31, "Feb": 28, "Mar": 31, "Apr": 30, "May": 31, "Jun": 30, "Jul": 31, "Aug": 31, "Sep": 30, "Oct": 31, "Nov": 30, "Dec": 31}
+	months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+	mon_ini, mon_fin = tgts[0].split('-')
+	nmonths, ndays, flag = 0, 0, 0
+	for i in months:
+		if flag == 1:
+			nmonths += 1
+			ndays += days_in_month_dict[i]
+			if i == mon_fin:
+				flag = 0
+
+		if i == mon_ini:
+			flag = 1
+			nmonths += 1
+			ndays += days_in_month_dict[i]
+
+	# Predictor switches
+	if PREDICTOR=='PRCP' or PREDICTOR=='UQ' or PREDICTOR=='VQ':
+		rainfall_frequency = False  #False uses total rainfall for forecast period, True uses frequency of rainy days
+		threshold_pctle = False
+		wetday_threshold = -999 #WET day threshold (mm) --only used if rainfall_frequency is True!
+	elif PREDICTOR=='RFREQ':
+		rainfall_frequency = True  #False uses total rainfall for forecast period, True uses frequency of rainy days
+		wetday_threshold = 3 #WET day threshold (mm) --only used if rainfall_frequency is True!
+		threshold_pctle = False    #False for threshold in mm; Note that if True then if counts DRY days!!!
+
+	if rainfall_frequency:
+		print('Predictand is Rainfall Frequency; wet day threshold = '+str(wetday_threshold)+' mm')
+	else:
+		print('Predictand is Rainfall Total (mm)')
+
+	########Observation dataset URLs
+	if obs == 'CPC-CMAP-URD':
+	    obs_source = 'SOURCES/.Models/.NMME/.CPC-CMAP-URD/prate'
+	    hdate_last = 2010
+	elif obs == 'TRMM':
+	    obs_source = 'SOURCES/.NASA/.GES-DAAC/.TRMM_L3/.TRMM_3B42/.v7/.daily/.precipitation/X/-180./1.5/180./GRID/Y/-50/1.5/50/GRID'
+	    hdate_last = 2014
+	elif obs == 'CPC':
+	    obs_source = 'SOURCES/.NOAA/.NCEP/.CPC/.UNIFIED_PRCP/.GAUGE_BASED/.GLOBAL/.v1p0/.extREALTIME/.rain/X/-180./1.5/180./GRID/Y/-90/1.5/90/GRID'
+	    hdate_last = 2018
+	elif obs == 'CHIRPS':
+	    obs_source = 'SOURCES/.UCSB/.CHIRPS/.v2p0/.daily-improved/.global/.0p25/.prcp/'+str(ndays)+'/mul'
+	    hdate_last = 2018
+	elif obs == 'Chilestations':
+	    obs_source = 'home/.xchourio/.ACToday/.CHL/.prcp'
+	    hdate_last = 2019
+	elif obs == 'GPCC':
+	    obs_source = 'SOURCES/.WCRP/.GCOS/.GPCC/.FDP/.version7/.0p5/.prcp/'+str(nmonths)+'/mul'
+	    hdate_last = 2013
+	elif obs == 'Chilestations':
+	    obs_source = 'home/.xchourio/.ACToday/.CHL/.prcp'
+	    hdate_last = 2019
+	elif obs == 'ENACTS-BD':
+		obs_source = 'SOURCES/.Bangladesh/.BMD/.monthly/.rainfall/.rfe_merged'
+		hdate_last = 2020
+	else:
+	    print ("Obs option is invalid")
+
+	########MOS-dependent parameters
+	if MOS=='None':
+	    mpref='noMOS'
+	elif MOS=='CCA':
+	    mpref='CCA'
+	elif MOS=='PCR':
+	    mpref='PCR'
+	elif MOS=='ELR':
+	    mpref='ELRho'
+
+	L=['1'] #lead for file name (TO BE REMOVED --requested by Xandre)
+	ntrain= tend-tini+1 # length of training period
+	fprefix = PREDICTOR
+	return rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays
+
+
 
 class MidpointNormalize(colors.Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -705,7 +796,8 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr):
 			#current_cmap_binary.set_bad('white',1.0)
 			current_cmap_binary.set_under('white', 1.0)
 			#current_cmap = plt.get_cmap('GnBu')
-			current_cmap_ylgn = plt.get_cmap('Blues', 9)
+			#current_cmap_ylgn = plt.get_cmap('Blues', 9)
+			current_cmap_ylgn = make_cmap_blue(9)
 			#current_cmap_ylgn.set_bad('white',1.0)
 			current_cmap_ylgn.set_under('white', 1.0)
 
@@ -747,8 +839,8 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr):
 
 			if fancy:
 				#fancy
-				titles = ["Deterministic", "Dominant Tercile"]
-				labels = ['Rainfall anomaly (mm/week)', 'Probability (%)']
+				titles = ["Deterministic Forecast", "Probabilistic Forecast (Dominant Tercile)"]
+				labels = ['Rainfall', 'Probability (%)']
 				ax[j][i].set_title(titles[i])
 
 				if i == 0:
@@ -870,7 +962,7 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr):
 			else:
 				#not fancy
 				titles = ["Deterministic", "Below Normal", "Normal", "Above Normal"]
-				labels = ['Rainfall anomaly (mm/week)', 'BN Probability (%)','N Probability (%)','AN Probability (%)']
+				labels = ['Rainfall', 'BN Probability (%)','N Probability (%)','AN Probability (%)']
 				ax[j][i].set_title(titles[i])
 				if i == 0:
 					#not fancy deterministic
@@ -1433,6 +1525,8 @@ def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, forc
 	if force_download:
 		if obs_source=='home/.xchourio/.ACToday/.CHL/.prcp':
 			url='http://iridl.ldeo.columbia.edu/'+obs_source+'/T/%28'+tar+'%29/seasonalAverage/-999/setmissing_value/%5B%5D%5BT%5Dcptv10.tsv'
+		elif obs_source=='SOURCES/.Bangladesh/.BMD/.monthly/.rainfall/.rfe_merged':
+			url='https://datalibrary.bmd.gov.bd/'+obs_source+'/T/%28Jan%201982%29/%28Dec%202010%29/RANGE/T/%28'+tar+'%29/seasonalAverage/Y/%28'+str(sla2)+'%29/%28'+str(nla2)+'%29/RANGEEDGES/X/%28'+str(wlo2)+'%29/%28'+str(elo2)+'%29/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BT%5Dcptv10.tsv'
 		else:
 			url='https://iridl.ldeo.columbia.edu/'+obs_source+'/T/%28Jan%201982%29/%28Dec%202010%29/RANGE/T/%28'+tar+'%29/seasonalAverage/Y/%28'+str(sla2)+'%29/%28'+str(nla2)+'%29/RANGEEDGES/X/%28'+str(wlo2)+'%29/%28'+str(elo2)+'%29/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BT%5Dcptv10.tsv'
 
