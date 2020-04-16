@@ -315,7 +315,7 @@ def pltdomain(loni1,lone1,lati1,late1,loni2,lone2,lati2,late2):
 
 		ax.set_title(title[i]+" domain")
 		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
+				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 		pl.xlabels_top = False
 		pl.ylabels_left = False
 		pl.xformatter = LONGITUDE_FORMATTER
@@ -416,7 +416,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			#ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
 
 			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
+				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 			pl.xlabels_top = False
 			pl.ylabels_left = True
 			pl.ylabels_right = False
@@ -540,7 +540,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 			ax[j][i].add_feature(feature.LAND)
 			#ax[j][i].add_feature(feature.COASTLINE)
 			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
+				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 			pl.xlabels_top = False
 			pl.ylabels_left = True
 			pl.ylabels_right = False
@@ -823,7 +823,7 @@ def plt_ng(models,predictand,loni,lone,lati,late,fprefix,mpref,mons, mon, fyr):
 			ax[j][i].add_feature(feature.LAND)
 			#ax[j][i].add_feature(feature.COASTLINE)
 			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-				  linewidth=2, color='gray', alpha=0.5, linestyle='--')
+				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 			pl.xlabels_top = False
 			pl.ylabels_left = True
 			pl.ylabels_right = False
@@ -1141,7 +1141,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 				ax2.add_feature(feature.COASTLINE)
 				#ax2.set_ybound(lower=lati, upper=late)
 				pl2=ax2.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-					linewidth=2, color='gray', alpha=0.5, linestyle='--')
+					linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 				pl2.xlabels_top = False
 				pl2.ylabels_left = True
 				pl2.ylabels_right = False
@@ -1242,7 +1242,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		current_cmap.set_bad('white',1.0)
 		current_cmap.set_under('white', 1.0)
 		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-			linewidth=2, color='gray', alpha=0.5, linestyle='--')
+			linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 		pl.xlabels_top = False
 		pl.ylabels_left = True
 		pl.ylabels_right = False
@@ -1387,7 +1387,7 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 		#plt.subplot(1, 2, 1)
 		ax[0].plot(x, t.sf(x, dof, loc=muc, scale=scalec)*100,'b-', lw=5, alpha=0.6, label='clim')
 		ax[0].plot(x, t.sf(x, dof, loc=muf, scale=scalef)*100,'r-', lw=5, alpha=0.6, label='fcst')
-		ax[0].axvline(x=thrs, color='k', linestyle='--')
+		ax[0].axvline(x=thrs, color='k', linestyle=(0,(2,4)))
 		ax[0].plot(thrs, fprobth,'ok')
 		ax[0].plot(thrs, cprobth,'ok')
 		ax[0].text(thrs+0.05, cprobth, str(cprobth)+'%', **style)
@@ -1405,7 +1405,7 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 		#ax[1].subplot(1, 2, 2)
 		ax[1].plot(x, cpdf,'b-', lw=5, alpha=0.6, label='clim')
 		ax[1].plot(x, fpdf,'r-', lw=5, alpha=0.6, label='fcst')
-		ax[1].axvline(x=thrs, color='k', linestyle='--')
+		ax[1].axvline(x=thrs, color='k', linestyle=(0,(2,4)))
 		ax[1].legend(loc='best', frameon=False)
 		# Add title and axis names
 		ax[1].set_title('Probability Density Functions')
