@@ -17,7 +17,14 @@
 # -----but idk how to run with multiple targets
 # ---Added model names to Output
 
+#Colorbar to the right
+#Obs plot small domain
+#save forecast maps
+#Get WriteCPT and NGEnsamble functions from angel
+#line 1610 - substitute years for tini and tend
 
+#one slide with new changes & main contributions
+#ones slide with old version of PyCPT
 
 #* Started simplifying functions, wrote readGrADSctl function; added functions to create the NextGen files for det skill assessment and plotting --AGM, Sep 2019
 #* Fixed bug with plotting functions when selecting a subset of the seasons, and added start time for forecast file in CPT script -- AGM, July 1st 2019
@@ -167,7 +174,7 @@ def setup_params(PREDICTOR,obs,MOS,tini,tend, tgts):
 	    obs_source = 'home/.xchourio/.ACToday/.CHL/.prcp'
 	    hdate_last = 2019
 	elif obs == 'ENACTS-BD':
-		obs_source = 'SOURCES/.Bangladesh/.BMD/.monthly/.rainfall/.rfe_merged'
+		obs_source = 'SOURCES/.Bangladesh/.BMD/.monthly/.rainfall/.rfe_merged/'+str(nmonths)+'/mul'
 		hdate_last = 2020
 	else:
 	    print ("Obs option is invalid")
@@ -244,7 +251,7 @@ def PrepFiles(fprefix, predictand, threshold_pctle, wlo1, wlo2,elo1, elo2, sla1,
 		GetHindcasts_UQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, force_download)
 		print('Hindcasts file ready to go')
 		print('----------------------------------------------')
-		GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station)
+		GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station,nmonths)
 		print('Obs:precip file ready to go')
 		print('----------------------------------------------')
 		GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download)
@@ -254,7 +261,7 @@ def PrepFiles(fprefix, predictand, threshold_pctle, wlo1, wlo2,elo1, elo2, sla1,
 		GetHindcasts_VQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, force_download)
 		print('Hindcasts file ready to go')
 		print('----------------------------------------------')
-		GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station)
+		GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station,nmonths)
 		print('Obs:precip file ready to go')
 		print('----------------------------------------------')
 		GetForecast_VQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download)
@@ -264,7 +271,7 @@ def PrepFiles(fprefix, predictand, threshold_pctle, wlo1, wlo2,elo1, elo2, sla1,
 		GetHindcasts(tini, tend, wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, nmonths, tar, model, force_download)
 		print('Hindcasts file ready to go')
 		print('----------------------------------------------')
-		GetObs( predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station)
+		GetObs( predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station,nmonths)
 		print('Obs:precip file ready to go')
 		print('----------------------------------------------')
 		GetForecast( monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, nmonths, model, force_download)
@@ -383,7 +390,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 	#plt.figure(figsize=(20,10))
 	#fig, ax = plt.subplots(figsize=(20,15),sharex=True,sharey=True)
-	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(6,6*nmods),sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(6,6*nmods), subplot_kw={'projection': ccrs.PlateCarree()})
 	if nsea == 1:
 		ax = [ax]
 	if nmods == 1:
@@ -403,10 +410,16 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			else:
 				model=models[i-1]
 
-			if mpref=='PCR':
-				ax[j][i].set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())  #EOF domains will look different between CCA and PCR if X and Y domains are different
+
+
+			if i == 0 and obs == 'ENACTS-BD':
+				ax[j][i].set_extent([87.5,93,20.5,27], crs=ccrs.PlateCarree())
 			else:
-				ax[j][i].set_extent([loni,loni+Wy*XDy,lati,lati+Hy*YDy], ccrs.PlateCarree())
+				if mpref=='PCR':
+					ax[j][i].set_extent([loni,loni+W*XD,lati,lati+H*YD], crs=ccrs.PlateCarree())  #EOF domains will look different between CCA and PCR if X and Y domains are different
+				else:
+					ax[j][i].set_extent([loni,loni+Wy*XDy,lati,lati+Hy*YDy], crs=ccrs.PlateCarree())
+
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
 				category='cultural',
@@ -432,8 +445,8 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			ax[j][i].add_feature(states_provinces, edgecolor='black')
 
 			if obs == 'ENACTS-BD' and i ==0:
-				ax[j][i].set_ybound(lower=20, upper=27)
-				ax[j][i].set_xbound(lower=87, upper=93)
+				ax[j][i].set_ybound(lower=20.5, upper=27)
+				ax[j][i].set_xbound(lower=87.5, upper=93)
 			else:
 				ax[j][i].set_ybound(lower=lati, upper=late)
 				ax[j][i].set_xbound(lower=loni, upper=lone)
@@ -447,11 +460,6 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 			if i == 0:
 				ax[j][i].set_title(mons[j])
-			if j == nsea - 1:
-				pl.xlabels_bottom = True
-			if i == nmods -1:
-				pl.ylabels_right=True
-
 
 			#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
 			if i ==0:
@@ -474,6 +482,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 					endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
 					eofy[mo,:,:]= np.transpose(A0.reshape((Wy, Hy), order='F'))
 				eofy[eofy==-999.]=np.nan #nans
+
 				if obs == 'ENACTS-BD':
 					CS=ax[j][i].pcolormesh(np.linspace(87.6, 93.0,num=Wy), np.linspace(27.1, 20.4, num=Hy), eofy[mode,:,:],
 					vmin=-.1,vmax=.1,
@@ -506,14 +515,25 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 				transform=ccrs.PlateCarree())
 				label = 'EOF charges'
 
-			axins = inset_axes(ax[j][i],
-                   width="5%",  # width = 5% of parent_bbox width
-                   height="100%",  # height : 50%
-                   loc='center left',
-                   bbox_to_anchor=(-0.22, 0., 1, 1),
-                   bbox_transform=ax[j][i].transAxes,
-                   borderpad=0.1,
-                   )
+			is_left = False
+			if is_left:
+				axins = inset_axes(ax[j][i],
+	                   width="5%",  # width = 5% of parent_bbox width
+	                   height="100%",  # height : 50%
+	                   loc='center left',
+	                   bbox_to_anchor=(-0.22, 0., 1, 1),
+	                   bbox_transform=ax[j][i].transAxes,
+	                   borderpad=0.1,
+	                   )
+			else:
+				axins = inset_axes(ax[j][i],
+	                   width="5%",  # width = 5% of parent_bbox width
+	                   height="100%",  # height : 50%
+	                   loc='center right',
+	                   bbox_to_anchor=(0., 0., 1.3, 1),
+	                   bbox_transform=ax[j][i].transAxes,
+	                   borderpad=0.1,
+	                   )
 			cbar = plt.colorbar(CS,ax=ax[j][i], cax=axins, orientation='vertical', pad=0.01, ticks= [-0.09, -0.075, -0.06, -0.045, -0.03, -0.015, 0, 0.015, 0.03, 0.045, 0.06, 0.075, 0.09])
 			#cbar.set_label(label) #, rotation=270)
 			axins.yaxis.tick_left()
@@ -768,7 +788,10 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 #			ax = plt.subplot(nwk/2, 2, wk, projection=ccrs.PlateCarree())
 
 			#ax = plt.subplot(nmods,nsea, k, projection=ccrs.PlateCarree())
-			ax[j][i].set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
+			if obs == 'ENACTS-BD':
+				ax[j][i].set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
+			else:
+				ax[j][i].set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
 				category='cultural',
@@ -863,37 +886,55 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					transform=ccrs.PlateCarree())
 					label = 'Correlation'
 
-				#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
-				#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
-				#plt.tight_layout()
-				#plt.autoscale(enable=True)
-	#plt.subplots_adjust(hspace=0.0)
-	#plt.subplots_adjust(hspace=0.0)
-	#cax = plt.axes([0.0, 0.0, 0.30, 0.02])
-	#cbar = fig.colorbar(CS, cax=ax[len(ax)-1], orientation='horizontal')
 
-			axins = inset_axes(ax[j][i],
-                   width="5%",  # width = 5% of parent_bbox width
-                   height="100%",  # height : 50%
-                   loc='center left',
-                   bbox_to_anchor=(-0.22, 0., 1, 1),
-                   bbox_transform=ax[j][i].transAxes,
-                   borderpad=0.1,
-                   )
-			if score in ['Pearson','Spearman']:
-				 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
-				 cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
-			elif score == '2AFC':
-				bounds = [10*gt for gt in range(1,10, 2)]
-				cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
-			elif score == 'RMSE':
-				bounds = [10*gt for gt in range(1,10, 2)]
-				cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+			#Make true if you want cbar on left, default is cbar on right
+			is_left = False
+			if is_left:
+				axins = inset_axes(ax[j][i],
+	                   width="5%",  # width = 5% of parent_bbox width
+	                   height="100%",  # height : 50%
+	                   loc='center left',
+	                   bbox_to_anchor=(-0.22, 0., 1, 1),
+	                   bbox_transform=ax[j][i].transAxes,
+	                   borderpad=0.1,
+	                   )
+				if score in ['Pearson','Spearman']:
+					 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
+					 cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
+				elif score == '2AFC':
+					bounds = [10*gt for gt in range(1,10, 2)]
+					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+				elif score == 'RMSE':
+					bounds = [10*gt for gt in range(1,10, 2)]
+					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+				else:
+					bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
+					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+				#cbar.set_label(label) #, rotation=270)\
+				axins.yaxis.tick_left()
 			else:
-				bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
-				cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
-			#cbar.set_label(label) #, rotation=270)\
-			axins.yaxis.tick_left()
+				axins = inset_axes(ax[j][i],
+	                   width="5%",  # width = 5% of parent_bbox width
+	                   height="100%",  # height : 50%
+	                   loc='center right',
+	                   bbox_to_anchor=(0., 0., 1.3, 1),
+	                   bbox_transform=ax[j][i].transAxes,
+	                   borderpad=0.1,
+	                   )
+				if score in ['Pearson','Spearman']:
+					 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
+					 cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
+				elif score == '2AFC':
+					bounds = [10*gt for gt in range(1,10, 2)]
+					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+				elif score == 'RMSE':
+					bounds = [10*gt for gt in range(1,10, 2)]
+					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+				else:
+					bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
+					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+				#cbar.set_label(label) #, rotation=270)\
+				axins.yaxis.tick_left()
 			f.close()
 
 	plt.tight_layout()
@@ -953,10 +994,8 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	cbar_loc, fancy = 'bottom', True
 	nmods=len(models)
 	nsea=len(mons)
-	if fancy:
-		xdim = 1
-	else:
-		xdim = 4
+	xdim=1
+	#
 	list_probabilistic_by_season = [[[], [], []] for i in range(nsea)]
 	list_det_by_season = [[] for i in range(nsea)]
 	for i in range(nmods):
@@ -974,45 +1013,42 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 		p_bn_array = np.asarray(list_probabilistic_by_season[j][0])
 		p_n_array = np.asarray(list_probabilistic_by_season[j][1])
 		p_an_array = np.asarray(list_probabilistic_by_season[j][2])
-		p_bn_nanmean = np.nanmean(p_bn_array, axis=0)
-		if fancy:
-			p_bn = p_bn_nanmean
-			p_bn_blank_areas = np.where(np.isnan(p_bn))
-			p_bn[np.where(np.isnan(p_bn))] = -1.0
-		p_n_nanmean = np.nanmean(p_n_array, axis=0)
-		if fancy:
-			p_n = p_n_nanmean
-			p_n_blank_areas = np.where(np.isnan(p_n))
-			p_n[np.where(np.isnan(p_n))] = -1.0
-		p_an_nanmean = np.nanmean(p_an_array, axis=0)
-		if fancy:
-			p_an = p_an_nanmean
-			p_an_blank_areas = np.where(np.isnan(p_an))
-			p_an[np.where(np.isnan(p_an))] = -1.0
 
-			max_ndxs = np.argmax(np.asarray([p_bn, p_n, p_an]), axis=0)
+		p_bn = np.nanmean(p_bn_array, axis=0) #average over the models
+		p_n = np.nanmean(p_n_array, axis=0)   #some areas are NaN
+		p_an = np.nanmean(p_an_array, axis=0) #if they are Nan for All, mark
 
-			p_bn[np.where(max_ndxs!= 0)] = np.nan
-			p_n[np.where(max_ndxs!= 1)] = np.nan
-			p_an[np.where(max_ndxs!= 2)] = np.nan
-			p_bn[p_bn_blank_areas] = -1.0
-			p_n[p_n_blank_areas] = -1.0
-			p_an[p_an_blank_areas] = -1.0
+		all_nan = np.zeros(p_bn.shape)
+		for ii in range(p_bn.shape[0]):
+			for jj in range(p_bn.shape[1]):
+				if np.isnan(p_bn[ii,jj]) and np.isnan(p_n[ii,jj]) and np.isnan(p_an[ii,jj]):
+					all_nan[ii,jj] = 1
+		missing = np.where(all_nan > 0)
+
+
+		"""p_bn[np.where(np.isnan(p_bn))] = -1.0
+		p_n[np.where(np.isnan(p_n))] = -1.0
+		p_an[np.where(np.isnan(p_an))] = -1.0"""
+
+		max_ndxs = np.argmax(np.asarray([p_bn, p_n, p_an]), axis=0)
+		p_bn[np.where(max_ndxs!= 0)] = np.nan
+		p_n[np.where(max_ndxs!= 1)] = np.nan
+		p_an[np.where(max_ndxs!= 2)] = np.nan
+
+		"""p_bn[np.where(p_bn < 0)] = np.nan
+		p_n[np.where(p_n < 0)] = np.nan
+		p_an[np.where(p_an < 0)] = np.nan
+
+		p_bn[missing] = -1.0
+		p_n[missing] = -1.0
+		p_an[missing] = -1.0"""
 
 		d_array = np.asarray(list_det_by_season[j])
 		d_nanmean = np.nanmean(d_array, axis=0)
-		#d = np.nan_to_num(d_array, nan=-999.0)
-
-		ng_probfcst_by_season.append([p_bn_nanmean, p_n_nanmean, p_an_nanmean])
-		ng_detfcst_by_season.append(d_nanmean)
 
 	if fancy:
 		fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(20, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
-	else:
-		fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(38, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
-	#fig = plt.figure(figsize=(20,40))
-	#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
-	#ax.append(plt.subplot2grid((nmods+1, nsea), (nmods, 0), colspan=nsea ) )
+
 	if nsea == 1:
 		ax = [ax]
 	ax = [ax]
@@ -1022,25 +1058,24 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	for j in range(nsea):
 		for i in range(xdim):
 			current_cmap = plt.get_cmap('BrBG')
-			current_cmap.set_bad('white',0.0)
+			#current_cmap.set_bad('white',0.0)
 			current_cmap.set_under('white', 0.0)
-			#current_cmap = plt.get_cmap('YlOrBr')
+
 			current_cmap_copper = plt.get_cmap('YlOrRd', 9)
-			current_cmap_copper.set_bad('white',0.0)
-			current_cmap_copper.set_under('white', 0.0)
-			#current_cmap = plt.get_cmap('Greys')
+			#current_cmap_copper.set_bad('white',1.0)
+			#current_cmap_copper.set_under('white', 0.0)
+
 			current_cmap_binary = plt.get_cmap('Greens', 4)
-			current_cmap_binary.set_bad('white',0.0)
-			current_cmap_binary.set_under('white', 0.0)
-			#current_cmap = plt.get_cmap('GnBu')
-			#current_cmap_ylgn = plt.get_cmap('Blues', 9)
+			#current_cmap_binary.set_bad('white',1.0)
+			#current_cmap_binary.set_under('white', 0.0)
+
 			current_cmap_ylgn = make_cmap_blue(9)
-			current_cmap_ylgn.set_bad('white',0.0)
-			current_cmap_ylgn.set_under('white', 0.0)
+			#current_cmap_ylgn.set_bad('white',1.0)
+			#current_cmap_ylgn.set_under('white', 0.0)
 
 			my_cmap = make_cmap(1000)
-			my_cmap.set_bad('white', 1.0)
-			my_cmap.set_under('white',1.0)
+			my_cmap.set_bad('white', 0.0)
+			my_cmap.set_under('white',0.0)
 
 			lats, longs = plats, plongs
 
@@ -1073,203 +1108,61 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			if i == 0:
 				ax[j][i].text(-0.25, 0.5, mons[j],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
 
-			if fancy:
-				#fancy
-				titles = [ "Probabilistic Forecast (Dominant Tercile)"]
-				labels = ['Rainfall', 'Probability (%)']
-				ax[j][i].set_title(titles[i])
+			#fancy
+			titles = [ "Probabilistic Forecast (Dominant Tercile)"]
+			labels = ['Rainfall', 'Probability (%)']
+			ax[j][i].set_title(titles[i])
 
-				if False:
-					#fancy deterministic
-					var = ng_detfcst_by_season[j]
-					CS_det = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-						norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap)
 
-					if cbar_loc == 'left':
-						#fancy deterministic cb left
-						axins_det = inset_axes(ax[j][i],
-			            	width="5%",  # width = 5% of parent_bbox width
-			               	height="100%",  # height : 50%
-			               	loc='center left',
-			               	bbox_to_anchor=(-0.25, 0., 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_ldet = fig.colorbar(CS_det, ax=ax[j][i], cax=axins_det,  orientation='vertical', pad=0.02)
-						cbar_ldet.set_label(labels[i]) #, rotation=270)\
-						axins_det.yaxis.tick_left()
-					else:
-						#fancy deterministic cb bottom
-						axins_det = inset_axes(ax[j][i],
-			            	width="100%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(0., -0.25, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_bdet = fig.colorbar(CS_det, ax=ax[j][i],  cax=axins_det, orientation='horizontal', pad = 0.02)
-						cbar_bdet.set_label(labels[i])
-				else:
-					#fancy probabilistic
-					CS1 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_bn,
-						vmin=35, vmax=80,
-						#norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap_copper)
-					CS2 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_n,
-						vmin=35, vmax=55,
-						#norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap_binary)
-					CS3 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_an,
-						vmin=35, vmax=80,
-						#norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap_ylgn)
+			#fancy probabilistic
+			CS1 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_bn,
+				vmin=35, vmax=80,
+				#norm=MidpointNormalize(midpoint=0.),
+				cmap=current_cmap_copper)
+			CS2 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_n,
+				vmin=35, vmax=55,
+				#norm=MidpointNormalize(midpoint=0.),
+				cmap=current_cmap_binary)
+			CS3 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_an,
+				vmin=35, vmax=80,
+				#norm=MidpointNormalize(midpoint=0.),
+				cmap=current_cmap_ylgn)
 
-					bounds = [40,45,50,55,60,65,70,75]
-					nbounds = [40,45,50]
-					if cbar_loc == 'left':
-						#fancy probabilistic cb left
-						axins_f = inset_axes(ax[j][i],
-							width="5%",  # width = 5% of parent_bbox width
-							height="33%",  # height : 50%
-							loc='lower left',
-							bbox_to_anchor=(-0.25, 0., 1, 1),
-							bbox_transform=ax[j][i].transAxes,
-							borderpad=0.1 )
+			bounds = [40,45,50,55,60,65,70,75]
+			nbounds = [40,45,50]
 
-						axins2 = inset_axes(ax[j][i],
-							width="5%",  # width = 5% of parent_bbox width
-							height="20%",  # height : 50%
-							loc='center left',
-							bbox_to_anchor=(-0.25, 0., 1, 1),
-							bbox_transform=ax[j][i].transAxes,
-							borderpad=0.1 )
+			#fancy probabilistic cb bottom
+			axins_f_bottom = inset_axes(ax[j][i],
+            	width="40%",  # width = 5% of parent_bbox width
+               	height="5%",  # height : 50%
+               	loc='lower left',
+               	bbox_to_anchor=(-0.2, -0.15, 1.2, 1),
+               	bbox_transform=ax[j][i].transAxes,
+               	borderpad=0.1 )
+			axins2_bottom = inset_axes(ax[j][i],
+            	width="20%",  # width = 5% of parent_bbox width
+               	height="5%",  # height : 50%
+               	loc='lower center',
+               	bbox_to_anchor=(-0.0, -0.15, 1, 1),
+               	bbox_transform=ax[j][i].transAxes,
+               	borderpad=0.1 )
+			axins3_bottom = inset_axes(ax[j][i],
+            	width="40%",  # width = 5% of parent_bbox width
+               	height="5%",  # height : 50%
+               	loc='lower right',
+               	bbox_to_anchor=(0, -0.15, 1.2, 1),
+               	bbox_transform=ax[j][i].transAxes,
+               	borderpad=0.1 )
+			cbar_fbl = fig.colorbar(CS1, ax=ax[j][i], cax=axins_f_bottom, orientation='horizontal', ticks=bounds)
+			cbar_fbl.set_label('BN Probability (%)') #, rotation=270)\
 
-						axins3 = inset_axes(ax[j][i],
-							width="5%",  # width = 5% of parent_bbox width
-							height="33%",  # height : 50%
-							loc='upper left',
-							bbox_to_anchor=(-0.25, 0., 1, 1),
-							bbox_transform=ax[j][i].transAxes,
-							borderpad=0.1 )
+			cbar_fbc = fig.colorbar(CS2, ax=ax[j][i],  cax=axins2_bottom, orientation='horizontal', ticks=nbounds)
+			cbar_fbc.set_label('N Probability (%)') #, rotation=270)\
 
-						cbar_fll = fig.colorbar(CS1, ax=ax[j][i], cax=axins_f, orientation='vertical', ticks=bounds)
-						cbar_fll.set_label('BN Probability (%)') #, rotation=270)\
-						#cbar_fll.ax.tick_params(rotation=270)
+			cbar_fbr = fig.colorbar(CS3, ax=ax[j][i],  cax=axins3_bottom, orientation='horizontal', ticks=bounds)
+			cbar_fbr.set_label('AN Probability (%)') #, rotation=270)\
 
-						cbar_fcl = fig.colorbar(CS2, ax=ax[j][i],  cax=axins2, orientation='vertical', ticks=nbounds)
-						cbar_fcl.set_label('N Probability (%)') #, rotation=270)\
-						#cbar_fcl.ax.tick_params(rotation=270)
 
-						cbar_ful = fig.colorbar(CS3, ax=ax[j][i],  cax=axins3, orientation='vertical', ticks=bounds)
-						cbar_ful.set_label('AN Probability (%)') #, rotation=270)\
-						#cbar_ful.ax.tick_params(rotation=270)
-
-						axins_f.yaxis.tick_left()
-						axins2.yaxis.tick_left()
-						axins3.yaxis.tick_left()
-					else:
-						#fancy probabilistic cb bottom
-						axins_f_bottom = inset_axes(ax[j][i],
-			            	width="40%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower left',
-			               	bbox_to_anchor=(-0.2, -0.15, 1.2, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						axins2_bottom = inset_axes(ax[j][i],
-			            	width="20%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(-0.0, -0.15, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						axins3_bottom = inset_axes(ax[j][i],
-			            	width="40%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower right',
-			               	bbox_to_anchor=(0, -0.15, 1.2, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_fbl = fig.colorbar(CS1, ax=ax[j][i], cax=axins_f_bottom, orientation='horizontal', ticks=bounds)
-						cbar_fbl.set_label('BN Probability (%)') #, rotation=270)\
-
-						cbar_fbc = fig.colorbar(CS2, ax=ax[j][i],  cax=axins2_bottom, orientation='horizontal', ticks=nbounds)
-						cbar_fbc.set_label('N Probability (%)') #, rotation=270)\
-
-						cbar_fbr = fig.colorbar(CS3, ax=ax[j][i],  cax=axins3_bottom, orientation='horizontal', ticks=bounds)
-						cbar_fbr.set_label('AN Probability (%)') #, rotation=270)\
-
-			else:
-				#not fancy
-				titles = ["Deterministic", "Below Normal", "Normal", "Above Normal"]
-				labels = ['Rainfall (mm)', 'BN Probability (%)','N Probability (%)','AN Probability (%)']
-				ax[j][i].set_title(titles[i])
-				if i == 0:
-					#not fancy deterministic
-					var = ng_detfcst_by_season[j]
-					CS_det = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-						norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap)
-					if cbar_loc == 'left':
-						#not fancy deterministic cb left
-						axins_det = inset_axes(ax[j][i],
-			            	width="5%",  # width = 5% of parent_bbox width
-			               	height="100%",  # height : 50%
-			               	loc='center left',
-			               	bbox_to_anchor=(-0.25, 0., 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_ldet = fig.colorbar(CS_det, ax=ax[j][i], cax=axins_det,  orientation='vertical', pad=0.02)
-						cbar_ldet.set_label(labels[i]) #, rotation=270)\
-						axins_det.yaxis.tick_left()
-					else:
-						#not fancy deterministic cb bottom
-						axins_det = inset_axes(ax[j][i],
-			            	width="100%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(0., -0.25, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_bdet = fig.colorbar(CS_det, ax=ax[j][i],  cax=axins_det, orientation='horizontal', pad = 0.02)
-						cbar_bdet.set_label(labels[i])
-				else:
-					#not fancy probabilistic
-					bounds = [40,45,50,55,60,65,70,75]
-					if cbar_loc == 'left':
-						var = ng_probfcst_by_season[j][i-1]
-						CS_nf = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-							vmin=0, vmax=100,
-							norm=MidpointNormalize(midpoint=0.),
-							cmap=my_cmap)
-						#not fancy probabilistic cb left
-						axins_lnf = inset_axes(ax[j][i],
-			            	width="5%",  # width = 5% of parent_bbox width
-			               	height="100%",  # height : 50%
-			               	loc='center left',
-			               	bbox_to_anchor=(-0.25, 0., 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_lnf = fig.colorbar(CS_nf, ax=ax[j][i], cax=axins_lnf, orientation='vertical', ticks=bounds)
-						cbar_lnf.set_label(labels[i]) #, rotation=270)\
-						axins_lnf.yaxis.tick_left()
-
-					else:
-						#not fancy probabilistic cb bottom
-						var = ng_probfcst_by_season[j][i-1]
-						CS_nf = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-							vmin=0, vmax=100,
-							norm=MidpointNormalize(midpoint=0.),
-							cmap=my_cmap)
-						axins_bnf = inset_axes(ax[j][i],
-			            	width="100%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(0, -0.25, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_bnf = fig.colorbar(CS_nf, ax=ax[j][i], cax=axins_bnf, orientation='horizontal', ticks=bounds)
-						cbar_bnf.set_label(labels[i]) #, rotation=270)\
 	fig.tight_layout(pad=10.0)
 
 
@@ -2045,15 +1938,16 @@ def GetHindcasts( tini, tend, wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, nmont
 			force_download = True
 	if force_download:
 		#dictionary:
-		dic = { 'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths) +'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'CMC2-CanCM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC2-CanCM4/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'COLA-RSMAS-CCSM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.COLA-RSMAS-CCSM4/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p5-FLOR-A06': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-A06/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+
+		dic = {	'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CMC1-CanCM3/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'CMC2-CanCM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC2-CanCM4/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CMC2-CanCM4/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'COLA-RSMAS-CCSM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.COLA-RSMAS-CCSM4/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'GFDL-CM2p5-FLOR-A06': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-A06/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+				'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.PENTAD_SAMPLES/.MONTHLY/.prec/SOURCES/.Models/.NMME/.NCEP-CFSv2/.FORECAST/.PENTAD_SAMPLES/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/M/%281%29%2824%29RANGE/%5BM%5D/average/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
+
 		}
 		# calls curl to download data
 		url=dic[model]
@@ -2124,7 +2018,7 @@ def GetHindcasts_VQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 		print("\n Hindcasts URL: \n\n "+url)
 		get_ipython().system("curl -k "+url+" > "+model+"_VQ_"+tar+"_ini"+mon+".tsv")
 
-def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station):
+def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station, nmonths):
 	if not force_download:
 		try:
 			ff=open("obs_"+predictand+"_"+tar+".tsv", 'r')
@@ -2136,7 +2030,7 @@ def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, forc
 	if force_download:
 		if obs_source=='home/.xchourio/.ACToday/.CHL/.prcp':
 			url='http://iridl.ldeo.columbia.edu/'+obs_source+'/T/%28'+tar+'%29/seasonalAverage/-999/setmissing_value/%5B%5D%5BT%5Dcptv10.tsv'
-		elif obs_source=='SOURCES/.Bangladesh/.BMD/.monthly/.rainfall/.rfe_merged':
+		elif obs_source=='SOURCES/.Bangladesh/.BMD/.monthly/.rainfall/.rfe_merged/'+str(nmonths)+'/mul':
 			url='https://datalibrary.bmd.gov.bd/'+obs_source+'/T/%28Jan%201982%29/%28Dec%202010%29/RANGE/T/%28'+tar+'%29/seasonalAverage/Y/%28'+str(sla2)+'%29/%28'+str(nla2)+'%29/RANGEEDGES/X/%28'+str(wlo2)+'%29/%28'+str(elo2)+'%29/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BT%5Dcptv10.tsv'
 		else:
 			url='https://iridl.ldeo.columbia.edu/'+obs_source+'/T/%28Jan%201982%29/%28Dec%202010%29/RANGE/T/%28'+tar+'%29/seasonalAverage/Y/%28'+str(sla2)+'%29/%28'+str(nla2)+'%29/RANGEEDGES/X/%28'+str(wlo2)+'%29/%28'+str(elo2)+'%29/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BT%5Dcptv10.tsv'
@@ -2191,6 +2085,7 @@ def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, nmonths, mod
 				'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 		}
 		# calls curl to download data
+		print(dic[model])
 		url=dic[model]
 		print("\n Forecast URL: \n\n "+url)
 
@@ -2258,7 +2153,7 @@ def GetForecast_RFREQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, wetday
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 
-def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,elo2,fprefix,mpref,tar,ntrain,MOS,station, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max):
+def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,elo2,fprefix,mpref,tar,ntrain,MOS,station, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, tini, tend):
 		"""Function to write CPT namelist file
 
 		"""
@@ -2295,6 +2190,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write(str(wlo1)+'\n')
 		# Easternmost longitude
 		f.write(str(elo1)+'\n')
+
 		if MOS=='CCA' or MOS=='PCR':
 			# Minimum number of X modes
 			f.write("{}\n".format(xmodes_min))
@@ -2339,11 +2235,11 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		# X training period
 		f.write("4\n")
 		# First year of X training period
-		f.write("1983\n")
+		f.write("{}\n".format(tini))
 		# Y training period
 		f.write("5\n")
 		# First year of Y training period
-		f.write("1983\n")
+		f.write("{}\n".format(tini))
 
 
 		# Goodness index
@@ -2361,8 +2257,10 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		# Enter length
 		f.write("3\n")
 
-		# Turn ON Transform predictand data
-		f.write("541\n")
+		if MOS!="None":
+			# Turn ON transform predictand data
+			f.write("541\n")
+
 		if fprefix=='RFREQ':
 			# Turn ON zero bound for Y data	 (automatically on by CPT if variable is precip)
 			f.write("542\n")
@@ -2559,6 +2457,11 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write("102\n")
 			file='../output/'+model+'_'+fprefix+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
+
+			# cross-validated skill maps
+			if MOS=="PCR" or MOS=="CCA":
+				f.write("0\n")
+
 			# cross-validated skill maps
 			f.write("413\n")
 			# save 2AFC score
@@ -2567,6 +2470,125 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write(file)
 			# Stop saving  (not needed in newest version of CPT)
 
+		###########PFV --Added by AGM in version 1.5
+		#Compute and write retrospective forecasts for prob skill assessment.
+		#Re-define forecas file if PCR or CCA
+		if MOS=="PCR" or MOS=="CCA":
+			f.write("3\n")
+			file='../input/'+model+'_'+fprefix+'_'+tar+'_ini'+mon+'.tsv\n'  #here a conditional should choose if rainfall freq is being used
+			f.write(file)
+		#Forecast period settings
+		f.write("6\n")
+		# First year to forecast. Save ALL forecasts (for "retroactive" we should only assess second half)
+		if monf=="Oct" or monf=="Nov" or monf=="Dec":
+			f.write(str(tini+1)+'\n')
+		else:
+			f.write(str(tini)+'\n')
+		#Number of forecasts option
+		f.write("9\n")
+		# Number of reforecasts to produce
+		if monf=="Oct" or monf=="Nov" or monf=="Dec":
+			f.write(str(ntrain-1)+'\n')
+		else:
+			f.write(str(ntrain)+'\n')
+		# Change to ASCII format
+		f.write("131\n")
+		# ASCII format
+		f.write("2\n")
+		# Probabilistic (3 categories) maps
+		f.write("455\n")
+		# Output results
+		f.write("111\n")
+		# Forecast probabilities --Note change in name for reforecasts:
+		f.write("501\n")
+		file='../output/'+model+'_RFCST_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'\n'
+		f.write(file)
+		#502 # Forecast odds
+		#Exit submenu
+		f.write("0\n")
+
+		# Close X file so we can access the PFV option
+		f.write("121\n")
+		f.write("Y\n")  #Yes to cleaning current results:# WARNING:
+		#Select Probabilistic Forecast Verification (PFV)
+		f.write("621\n")
+		# Opens X input file
+		f.write("1\n")
+		file='../output/'+model+'_RFCST_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.txt\n'
+		f.write(file)
+		# Nothernmost latitude
+		f.write(str(nla2)+'\n')
+		# Southernmost latitude
+		f.write(str(sla2)+'\n')
+		# Westernmost longitude
+		f.write(str(wlo2)+'\n')
+		# Easternmost longitude
+		f.write(str(elo2)+'\n')
+
+		f.write("5\n")
+		# First year of the PFV
+		# for "retroactive" only first half of the entire training period is typically used --be wise, as sample is short)
+		if monf=="Oct" or monf=="Nov" or monf=="Dec":
+			f.write(str(tini+1)+'\n')
+		else:
+			f.write(str(tini)+'\n')
+
+		#If these prob forecasts come from a cross-validated prediction (as it's coded right now)
+		#we don't want to cross-validate those again (it'll change, for example, the xv error variances)
+		#Forecast Settings menu
+		f.write("552\n")
+		#Conf level at 50% to have even, dychotomous intervals for reliability assessment (as per Simon suggestion)
+		f.write("50\n")
+		#Fitted error variance option  --this is the key option: 3 is 0-leave-out cross-validation, so no cross-validation!
+		f.write("3\n")
+		#-----Next options are required but not really used here:
+		#Ensemble size
+		f.write("10\n")
+		#Odds relative to climo?
+		f.write("N\n")
+		#Exceedance probabilities: show as non-exceedance?
+		f.write("N\n")
+		#Precision options:
+		#Number of decimal places (Max 8):
+		f.write("3\n")
+		#Forecast probability rounding:
+		f.write("1\n")
+		#End of required but not really used options ----
+
+		#Verify
+		f.write("313\n")
+
+		#Reliability diagram
+		f.write("431\n")
+		f.write("Y\n") #yes, save results to a file
+		file='../output/'+model+'_RFCST_reliabdiag_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.tsv\n'
+		f.write(file)
+
+		# select output format -- GrADS, so we can plot it in Python
+		f.write("131\n")
+		# GrADS format
+		f.write("3\n")
+
+		# Probabilistic skill maps
+		f.write("437\n")
+		# save Ignorance (all cats)
+		f.write("101\n")
+		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Ignorance_'+tar+'_'+mon+'\n'
+		f.write(file)
+
+		# Probabilistic skill maps
+		f.write("437\n")
+		# save Ranked Probability Skill Score (all cats)
+		f.write("122\n")
+		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RPSS_'+tar+'_'+mon+'\n'
+		f.write(file)
+
+		# Probabilistic skill maps
+		f.write("437\n")
+		# save Ranked Probability Skill Score (all cats)
+		f.write("131\n")
+		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_GROC_'+tar+'_'+mon+'\n'
+		f.write(file)
 
 
 		# Exit
@@ -2599,8 +2621,6 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 	PARAMETERS
 	----------
 		models: array with selected models
-
-		--cross year issue check angel version
 	"""
 	nmods=len(models)
 
@@ -2608,11 +2628,13 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 
 	ens  =np.empty([nmods,T,H,W])  #define array for later use
 
-	for i in range(nmods):
+	k=-1
+	for model in models:
+		k=k+1 #model
 		memb0=np.empty([T,H,W])  #define array for later use
 
 		#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-		f=open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 		for it in range(T):
 			#Now we read the field
@@ -2624,10 +2646,23 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 
 		memb0[memb0==-999.]=np.nan #identify NaNs
 
-		ens[i,:,:,:]=memb0
+		ens[k,:,:,:]=memb0
 
+	# NextGen ensemble mean (perhaps try median too?)
 	NG=np.nanmean(ens, axis=0)  #axis 0 is ensemble member
-	writeCPT(NG,'../input/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+
+	#Now write output:
+	#writeCPT(NG,'../output/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+	if id=='FCST_xvPr':
+		writeCPT(NG,'../input/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+		print('Cross-validated prediction files successfully produced')
+	if id=='FCST_mu':
+		writeCPT(NG,'../output/NextGen_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+		print('Forecast files successfully produced')
+	if id=='FCST_var':
+		writeCPT(NG,'../output/NextGen_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+		print('Forecast error files successfully produced')
+
 
 def writeCPT(var,outfile,models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 	"""Function to write seasonal output in CPT format,
@@ -2651,10 +2686,9 @@ def writeCPT(var,outfile,models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,mo
 	#Read grads file to get needed coordinate arrays
 	W, Wi, XD, H, Hi, YD, T, Ti, TD = readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr)
 	if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
-		Ti=Ti
 		xyear=True  #flag a cross-year season
 	else:
-		Ti=Ti +1
+		#Ti=Ti+1
 		xyear=False
 
 	Tarr = np.arange(Ti, Ti+T)
@@ -2677,6 +2711,6 @@ def writeCPT(var,outfile,models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,mo
 		f.write("\n") #next line
 		for iy in range(H):
 			#f.write(str(Yarr[iy]) + "\t" + str(var[it,iy,0:-1])[1:-1]) + "\n")
-			np.savetxt(f,np.r_[Yarr[iy],var[it,iy,0:]],fmt="%.3f", newline='\t')  #excise extra line
+			np.savetxt(f,np.r_[Yarr[iy+1],var[it,iy,0:]],fmt="%.3f", newline='\t')  #excise extra line
 			f.write("\n") #next line
 	f.close()
