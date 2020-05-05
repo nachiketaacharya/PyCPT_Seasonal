@@ -1025,57 +1025,25 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 					all_nan[ii,jj] = 1
 		missing = np.where(all_nan > 0)
 
-
-		"""p_bn[np.where(np.isnan(p_bn))] = -1.0
-		p_n[np.where(np.isnan(p_n))] = -1.0
-		p_an[np.where(np.isnan(p_an))] = -1.0"""
-
 		max_ndxs = np.argmax(np.asarray([p_bn, p_n, p_an]), axis=0)
 		p_bn[np.where(max_ndxs!= 0)] = np.nan
 		p_n[np.where(max_ndxs!= 1)] = np.nan
 		p_an[np.where(max_ndxs!= 2)] = np.nan
 
-		"""p_bn[np.where(p_bn < 0)] = np.nan
-		p_n[np.where(p_n < 0)] = np.nan
-		p_an[np.where(p_an < 0)] = np.nan
-
-		p_bn[missing] = -1.0
-		p_n[missing] = -1.0
-		p_an[missing] = -1.0"""
-
-		d_array = np.asarray(list_det_by_season[j])
-		d_nanmean = np.nanmean(d_array, axis=0)
-
-	if fancy:
-		fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(20, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(20, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
 
 	if nsea == 1:
 		ax = [ax]
 	ax = [ax]
 
-
-
 	for j in range(nsea):
 		for i in range(xdim):
 			current_cmap = plt.get_cmap('BrBG')
-			#current_cmap.set_bad('white',0.0)
 			current_cmap.set_under('white', 0.0)
 
 			current_cmap_copper = plt.get_cmap('YlOrRd', 9)
-			#current_cmap_copper.set_bad('white',1.0)
-			#current_cmap_copper.set_under('white', 0.0)
-
 			current_cmap_binary = plt.get_cmap('Greens', 4)
-			#current_cmap_binary.set_bad('white',1.0)
-			#current_cmap_binary.set_under('white', 0.0)
-
 			current_cmap_ylgn = make_cmap_blue(9)
-			#current_cmap_ylgn.set_bad('white',1.0)
-			#current_cmap_ylgn.set_under('white', 0.0)
-
-			my_cmap = make_cmap(1000)
-			my_cmap.set_bad('white', 0.0)
-			my_cmap.set_under('white',0.0)
 
 			lats, longs = plats, plongs
 
@@ -1182,10 +1150,7 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	cbar_loc, fancy = 'bottom', True
 	nmods=len(models)
 	nsea=len(mons)
-	if fancy:
-		xdim = 1
-	else:
-		xdim = 4
+	xdim = 1
 	list_probabilistic_by_season = [[[], [], []] for i in range(nsea)]
 	list_det_by_season = [[] for i in range(nsea)]
 	for i in range(nmods):
@@ -1200,51 +1165,11 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	ng_probfcst_by_season = []
 	ng_detfcst_by_season = []
 	for j in range(nsea):
-		p_bn_array = np.asarray(list_probabilistic_by_season[j][0])
-		p_n_array = np.asarray(list_probabilistic_by_season[j][1])
-		p_an_array = np.asarray(list_probabilistic_by_season[j][2])
-		p_bn_nanmean = np.nanmean(p_bn_array, axis=0)
-		if fancy:
-			p_bn = p_bn_nanmean
-			p_bn_blank_areas = np.where(np.isnan(p_bn))
-			p_bn[np.where(np.isnan(p_bn))] = -1.0
-		p_n_nanmean = np.nanmean(p_n_array, axis=0)
-		if fancy:
-			p_n = p_n_nanmean
-			p_n_blank_areas = np.where(np.isnan(p_n))
-			p_n[np.where(np.isnan(p_n))] = -1.0
-		p_an_nanmean = np.nanmean(p_an_array, axis=0)
-		if fancy:
-			p_an = p_an_nanmean
-			p_an_blank_areas = np.where(np.isnan(p_an))
-			p_an[np.where(np.isnan(p_an))] = -1.0
-
-			max_ndxs = np.argmax(np.asarray([p_bn, p_n, p_an]), axis=0)
-
-			p_bn[np.where(max_ndxs!= 0)] = np.nan
-			p_n[np.where(max_ndxs!= 1)] = np.nan
-			p_an[np.where(max_ndxs!= 2)] = np.nan
-			p_bn[p_bn_blank_areas] = -1.0
-			p_n[p_n_blank_areas] = -1.0
-			p_an[p_an_blank_areas] = -1.0
-
-
-
-
 		d_array = np.asarray(list_det_by_season[j])
 		d_nanmean = np.nanmean(d_array, axis=0)
-		#d = np.nan_to_num(d_array, nan=-999.0)
-
-		ng_probfcst_by_season.append([p_bn_nanmean, p_n_nanmean, p_an_nanmean])
 		ng_detfcst_by_season.append(d_nanmean)
 
-	if fancy:
-		fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(20, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
-	else:
-		fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(38, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
-	#fig = plt.figure(figsize=(20,40))
-	#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
-	#ax.append(plt.subplot2grid((nmods+1, nsea), (nmods, 0), colspan=nsea ) )
+	fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(20, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
 	if nsea == 1:
 		ax = [ax]
 	ax = [ax]
@@ -1257,29 +1182,8 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			current_cmap = plt.get_cmap('BrBG')
 			current_cmap.set_bad('white',0.0)
 			current_cmap.set_under('white', 0.0)
-			#current_cmap = plt.get_cmap('YlOrBr')
-			current_cmap_copper = plt.get_cmap('YlOrRd', 9)
-			current_cmap_copper.set_bad('white',0.0)
-			current_cmap_copper.set_under('white', 0.0)
-			#current_cmap = plt.get_cmap('Greys')
-			current_cmap_binary = plt.get_cmap('Greens', 4)
-			current_cmap_binary.set_bad('white',0.0)
-			current_cmap_binary.set_under('white', 0.0)
-			#current_cmap = plt.get_cmap('GnBu')
-			#current_cmap_ylgn = plt.get_cmap('Blues', 9)
-			current_cmap_ylgn = make_cmap_blue(9)
-			current_cmap_ylgn.set_bad('white',0.0)
-			current_cmap_ylgn.set_under('white', 0.0)
 
-			my_cmap = make_cmap(1000)
-			my_cmap.set_bad('white', 1.0)
-			my_cmap.set_under('white',1.0)
-
-			if True:
-				lats, longs = dlats, dlongs
-			else:
-				lats, longs = plats, plongs
-
+			lats, longs = dlats, dlongs
 			ax[j][i].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
 
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
@@ -1309,199 +1213,39 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			if i == 0:
 				ax[j][i].text(-0.25, 0.5, mons[j],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
 
-			if fancy:
-				#fancy
-				titles = ["Deterministic Forecast", "Probabilistic Forecast (Dominant Tercile)"]
-				labels = ['Rainfall (mm)', 'Probability (%)']
-				ax[j][i].set_title(titles[i])
+			titles = ["Deterministic Forecast", "Probabilistic Forecast (Dominant Tercile)"]
+			labels = ['Rainfall (mm)', 'Probability (%)']
+			ax[j][i].set_title(titles[i])
 
-				if i == 0:
-					#fancy deterministic
-					var = ng_detfcst_by_season[j]
-					CS_det = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-						norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap)
+			#fancy deterministic
+			var = ng_detfcst_by_season[j]
+			CS_det = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
+				norm=MidpointNormalize(midpoint=0.),
+				cmap=current_cmap)
 
-					if cbar_loc == 'left':
-						#fancy deterministic cb left
-						axins_det = inset_axes(ax[j][i],
-			            	width="5%",  # width = 5% of parent_bbox width
-			               	height="100%",  # height : 50%
-			               	loc='center left',
-			               	bbox_to_anchor=(-0.25, 0., 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_ldet = fig.colorbar(CS_det, ax=ax[j][i], cax=axins_det,  orientation='vertical', pad=0.02)
-						cbar_ldet.set_label(labels[i]) #, rotation=270)\
-						axins_det.yaxis.tick_left()
-					else:
-						#fancy deterministic cb bottom
-						axins_det = inset_axes(ax[j][i],
-			            	width="100%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(-0.1, -0.15, 1.1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_bdet = fig.colorbar(CS_det, ax=ax[j][i],  cax=axins_det, orientation='horizontal', pad = 0.02)
-						cbar_bdet.set_label(labels[i])
-				else:
-					#fancy probabilistic
-					CS1 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_bn,
-						vmin=35, vmax=80,
-						#norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap_copper)
-					CS2 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_n,
-						vmin=35, vmax=55,
-						#norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap_binary)
-					CS3 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_an,
-						vmin=35, vmax=80,
-						#norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap_ylgn)
-
-					bounds = [40,45,50,55,60,65,70,75]
-					nbounds = [40,45,50]
-					if cbar_loc == 'left':
-						#fancy probabilistic cb left
-						axins_f = inset_axes(ax[j][i],
-							width="5%",  # width = 5% of parent_bbox width
-							height="33%",  # height : 50%
-							loc='lower left',
-							bbox_to_anchor=(-0.25, 0., 1, 1),
-							bbox_transform=ax[j][i].transAxes,
-							borderpad=0.1 )
-
-						axins2 = inset_axes(ax[j][i],
-							width="5%",  # width = 5% of parent_bbox width
-							height="20%",  # height : 50%
-							loc='center left',
-							bbox_to_anchor=(-0.25, 0., 1, 1),
-							bbox_transform=ax[j][i].transAxes,
-							borderpad=0.1 )
-
-						axins3 = inset_axes(ax[j][i],
-							width="5%",  # width = 5% of parent_bbox width
-							height="33%",  # height : 50%
-							loc='upper left',
-							bbox_to_anchor=(-0.25, 0., 1, 1),
-							bbox_transform=ax[j][i].transAxes,
-							borderpad=0.1 )
-
-						cbar_fll = fig.colorbar(CS1, ax=ax[j][i], cax=axins_f, orientation='vertical', ticks=bounds)
-						cbar_fll.set_label('BN Probability (%)') #, rotation=270)\
-
-						cbar_fcl = fig.colorbar(CS2, ax=ax[j][i],  cax=axins2, orientation='vertical', ticks=nbounds)
-						cbar_fcl.set_label('N Probability (%)') #, rotation=270)\
-
-						cbar_ful = fig.colorbar(CS3, ax=ax[j][i],  cax=axins3, orientation='vertical', ticks=bounds)
-						cbar_ful.set_label('AN Probability (%)') #, rotation=270)\
-
-						axins_f.yaxis.tick_left()
-						axins2.yaxis.tick_left()
-						axins3.yaxis.tick_left()
-					else:
-						#fancy probabilistic cb bottom
-						axins_f_bottom = inset_axes(ax[j][i],
-			            	width="33%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower left',
-			               	bbox_to_anchor=(0., -0.25, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						axins2_bottom = inset_axes(ax[j][i],
-			            	width="20%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(0., -0.25, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						axins3_bottom = inset_axes(ax[j][i],
-			            	width="33%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower right',
-			               	bbox_to_anchor=(0., -0.25, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_fbl = fig.colorbar(CS1, ax=ax[j][i], cax=axins_f_bottom, orientation='horizontal', ticks=bounds)
-						cbar_fbl.set_label('BN Probability (%)') #, rotation=270)\
-
-						cbar_fbc = fig.colorbar(CS2, ax=ax[j][i],  cax=axins2_bottom, orientation='horizontal', ticks=nbounds)
-						cbar_fbc.set_label('N Probability (%)') #, rotation=270)\
-
-						cbar_fbr = fig.colorbar(CS3, ax=ax[j][i],  cax=axins3_bottom, orientation='horizontal', ticks=bounds)
-						cbar_fbr.set_label('AN Probability (%)') #, rotation=270)\
+			if cbar_loc == 'left':
+				#fancy deterministic cb left
+				axins_det = inset_axes(ax[j][i],
+	            	width="5%",  # width = 5% of parent_bbox width
+	               	height="100%",  # height : 50%
+	               	loc='center left',
+	               	bbox_to_anchor=(-0.25, 0., 1, 1),
+	               	bbox_transform=ax[j][i].transAxes,
+	               	borderpad=0.1 )
+				cbar_ldet = fig.colorbar(CS_det, ax=ax[j][i], cax=axins_det,  orientation='vertical', pad=0.02)
+				cbar_ldet.set_label(labels[i]) #, rotation=270)\
+				axins_det.yaxis.tick_left()
 			else:
-				#not fancy
-				titles = ["Deterministic", "Below Normal", "Normal", "Above Normal"]
-				labels = ['Rainfall (mm)', 'BN Probability (%)','N Probability (%)','AN Probability (%)']
-				ax[j][i].set_title(titles[i])
-				if i == 0:
-					#not fancy deterministic
-					var = ng_detfcst_by_season[j]
-					CS_det = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-						norm=MidpointNormalize(midpoint=0.),
-						cmap=current_cmap)
-					if cbar_loc == 'left':
-						#not fancy deterministic cb left
-						axins_det = inset_axes(ax[j][i],
-			            	width="5%",  # width = 5% of parent_bbox width
-			               	height="100%",  # height : 50%
-			               	loc='center left',
-			               	bbox_to_anchor=(-0.25, 0., 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_ldet = fig.colorbar(CS_det, ax=ax[j][i], cax=axins_det,  orientation='vertical', pad=0.02)
-						cbar_ldet.set_label(labels[i]) #, rotation=270)\
-						axins_det.yaxis.tick_left()
-					else:
-						#not fancy deterministic cb bottom
-						axins_det = inset_axes(ax[j][i],
-			            	width="100%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(0., -0.15, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_bdet = fig.colorbar(CS_det, ax=ax[j][i],  cax=axins_det, orientation='horizontal', pad = 0.02)
-						cbar_bdet.set_label(labels[i])
-				else:
-					#not fancy probabilistic
-					bounds = [40,45,50,55,60,65,70,75]
-					if cbar_loc == 'left':
-						var = ng_probfcst_by_season[j][i-1]
-						CS_nf = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-							vmin=0, vmax=100,
-							norm=MidpointNormalize(midpoint=0.),
-							cmap=my_cmap)
-						#not fancy probabilistic cb left
-						axins_lnf = inset_axes(ax[j][i],
-			            	width="5%",  # width = 5% of parent_bbox width
-			               	height="100%",  # height : 50%
-			               	loc='center left',
-			               	bbox_to_anchor=(-0.25, 0., 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_lnf = fig.colorbar(CS_nf, ax=ax[j][i], cax=axins_lnf, orientation='vertical', ticks=bounds)
-						cbar_lnf.set_label(labels[i]) #, rotation=270)\
-						axins_lnf.yaxis.tick_left()
-
-					else:
-						#not fancy probabilistic cb bottom
-						var = ng_probfcst_by_season[j][i-1]
-						CS_nf = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
-							vmin=0, vmax=100,
-							norm=MidpointNormalize(midpoint=0.),
-							cmap=my_cmap)
-						axins_bnf = inset_axes(ax[j][i],
-			            	width="100%",  # width = 5% of parent_bbox width
-			               	height="5%",  # height : 50%
-			               	loc='lower center',
-			               	bbox_to_anchor=(0, -0.25, 1, 1),
-			               	bbox_transform=ax[j][i].transAxes,
-			               	borderpad=0.1 )
-						cbar_bnf = fig.colorbar(CS_nf, ax=ax[j][i], cax=axins_bnf, orientation='horizontal', ticks=bounds)
-						cbar_bnf.set_label(labels[i]) #, rotation=270)\
+				#fancy deterministic cb bottom
+				axins_det = inset_axes(ax[j][i],
+	            	width="100%",  # width = 5% of parent_bbox width
+	               	height="5%",  # height : 50%
+	               	loc='lower center',
+	               	bbox_to_anchor=(-0.1, -0.15, 1.1, 1),
+	               	bbox_transform=ax[j][i].transAxes,
+	               	borderpad=0.1 )
+				cbar_bdet = fig.colorbar(CS_det, ax=ax[j][i],  cax=axins_det, orientation='horizontal', pad = 0.02)
+				cbar_bdet.set_label(labels[i])
 	fig.tight_layout(pad=10.0)
 
 
