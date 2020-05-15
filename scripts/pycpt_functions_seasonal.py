@@ -530,13 +530,13 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 	                   width="5%",  # width = 5% of parent_bbox width
 	                   height="100%",  # height : 50%
 	                   loc='center right',
-	                   bbox_to_anchor=(0., 0., 1.3, 1),
+	                   bbox_to_anchor=(0., 0., 1.15, 1),
 	                   bbox_transform=ax[j][i].transAxes,
 	                   borderpad=0.1,
 	                   )
 			cbar = plt.colorbar(CS,ax=ax[j][i], cax=axins, orientation='vertical', pad=0.01, ticks= [-0.09, -0.075, -0.06, -0.045, -0.03, -0.015, 0, 0.015, 0.03, 0.045, 0.06, 0.075, 0.09])
 			#cbar.set_label(label) #, rotation=270)
-			axins.yaxis.tick_left()
+			#axins.yaxis.tick_left()
 			f.close()
 
 	plt.tight_layout()
@@ -911,13 +911,13 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
 					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 				#cbar.set_label(label) #, rotation=270)\
-				axins.yaxis.tick_left()
+				#axins.yaxis.tick_left()
 			else:
 				axins = inset_axes(ax[j][i],
 	                   width="5%",  # width = 5% of parent_bbox width
 	                   height="100%",  # height : 50%
 	                   loc='center right',
-	                   bbox_to_anchor=(0., 0., 1.3, 1),
+	                   bbox_to_anchor=(0., 0., 1.15, 1),
 	                   bbox_transform=ax[j][i].transAxes,
 	                   borderpad=0.1,
 	                   )
@@ -934,7 +934,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
 					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 				#cbar.set_label(label) #, rotation=270)\
-				axins.yaxis.tick_left()
+				#axins.yaxis.tick_left()
 			f.close()
 
 	plt.tight_layout()
@@ -1383,7 +1383,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 	cbar.set_label('Probability (%)') #, rotation=270)
 	f.close()
 
-def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,monf,fyr,mons,tgts):
+def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,monf,fyr,mons,tgts, obs):
 	"""A simple function for ploting probabilistic forecasts in flexible format (for a given threshold)
 
 	PARAMETERS
@@ -1396,6 +1396,12 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 	"""
 	#Implement: read degrees of freedom from CPT file
 	#Formally, for CCA, dof=ntrain - #CCAmodes -1 ; since ntrain is huge after concat, dof~=ntrain for now
+	if obs == 'ENACTS-BD':
+		x_offset = 0.6
+		y_offset = 0.4
+	else:
+		x_offset = 0
+		y_offset = 0
 	dof=ntrain
 	nmods=len(models)
 	tar=tgts[mons.index(monf)]
@@ -1410,7 +1416,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 			YD= float(line.split()[4])
 
 	#plt.figure(figsize=(15,20))
-	fig, ax = plt.subplots(figsize=(20,140),sharex=True,sharey=True)
+	fig, ax = plt.subplots(figsize=(6,6),sharex=True,sharey=True)
 	k=0
 	for model in models:
 		k=k+1
@@ -1438,7 +1444,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		fprob = exceedprob(thrs,dof,muf,scalef)
 
 		ax = plt.subplot(nmods, 1, k, projection=ccrs.PlateCarree())
-		ax.set_extent([loni,loni+W*XD,lati,lati+H*YD], ccrs.PlateCarree())
+		ax.set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
 
 		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 		states_provinces = feature.NaturalEarthFeature(
@@ -1455,7 +1461,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 			ax.set_title('Probability (%) of Exceeding '+str(thrs)+" mm/day")
 		#current_cmap = plt.cm.get_cmap('RdYlBu', 10)
 		current_cmap = make_cmap(10)
-		current_cmap.set_bad('white',1.0)
+		#current_cmap.set_bad('white',1.0)
 		current_cmap.set_under('white', 1.0)
 		pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 			linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
@@ -1465,8 +1471,8 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		pl.xformatter = LONGITUDE_FORMATTER
 		pl.yformatter = LATITUDE_FORMATTER
 		ax.add_feature(states_provinces, edgecolor='gray')
-		ax.set_ybound(lower=lati, upper=late)
-		CS=plt.pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), fprob,
+		ax.set_ybound(lower=lati+y_offset, upper=late+y_offset)
+		CS=plt.pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), fprob,
 			vmin=0,vmax=100,
 			cmap=current_cmap,
 			transform=ccrs.PlateCarree())
@@ -1477,7 +1483,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		plt.tight_layout()
 		plt.subplots_adjust(hspace=0)
 		plt.subplots_adjust(bottom=0.15, top=0.9)
-		cbar = fig.colorbar(CS,ax=ax, orientation='horizontal', pad=0.01)
+		cbar = fig.colorbar(CS,ax=ax, orientation='vertical', pad=0.05)
 
 		# for i, row in enumerate(ax):
 		# 	for j, cell in enumerate(row):
