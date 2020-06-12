@@ -1001,9 +1001,8 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	for i in range(nmods):
 		for j in range(nsea):
 			plats, plongs, av = read_forecast('probabilistic', models[i], predictand, mpref, mons[j], mon, fyr )
-			list_probabilistic_by_season[j][0].append(av[0])
-			list_probabilistic_by_season[j][1].append(av[1])
-			list_probabilistic_by_season[j][2].append(av[2])
+			for kl in range(av.shape[0]):
+				list_probabilistic_by_season[j][kl].append(av[kl])
 			dlats, dlongs, av = read_forecast('deterministic', models[i], predictand, mpref, mons[j], mon, fyr )
 			list_det_by_season[j].append(av[0])
 
