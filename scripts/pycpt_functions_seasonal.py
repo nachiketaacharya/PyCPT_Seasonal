@@ -122,19 +122,28 @@ def setup_params(PREDICTOR,obs,MOS,tini,tend, tgts):
 	#global rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays
 	days_in_month_dict = {"Jan": 31, "Feb": 28, "Mar": 31, "Apr": 30, "May": 31, "Jun": 30, "Jul": 31, "Aug": 31, "Sep": 30, "Oct": 31, "Nov": 30, "Dec": 31}
 	months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-	mon_ini, mon_fin = tgts[0].split('-')
-	nmonths, ndays, flag = 0, 0, 0
-	for i in months:
-		if flag == 1:
-			nmonths += 1
-			ndays += days_in_month_dict[i]
-			if i == mon_fin:
-				flag = 0
+	if '-' in tgts[0]:
+		mon_ini, mon_fin = tgts[0].split('-')
+		nmonths, ndays, flag = 0, 0, 0
+		for i in months:
+			if flag == 1:
+				nmonths += 1
+				ndays += days_in_month_dict[i]
+				if i == mon_fin:
+					flag = 0
 
-		if i == mon_ini:
-			flag = 1
-			nmonths += 1
-			ndays += days_in_month_dict[i]
+			if i == mon_ini:
+				flag = 1
+				nmonths += 1
+				ndays += days_in_month_dict[i]
+	else:
+		mon_ini = tgts[0]
+		nmonths, ndays, flag = 0, 0, 0
+		for i in months:
+			if i == mon_ini:
+				flag = 1
+				nmonths += 1
+				ndays += days_in_month_dict[i]
 
 	# Predictor switches
 	if PREDICTOR=='PRCP' or PREDICTOR=='UQ' or PREDICTOR=='VQ':
@@ -2429,16 +2438,28 @@ def writeCPT(var,outfile,models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,mo
 	L=0.5*(float(tgtf)+float(tgti))
 	monthdic = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06','Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12'}
 	S=monthdic[mon]
-	mi=monthdic[tar.split("-")[0]]
-	mf=monthdic[tar.split("-")[1]]
+	if '-' in tar:
+		mi=monthdic[tar.split("-")[0]]
+		mf=monthdic[tar.split("-")[1]]
 
-	#Read grads file to get needed coordinate arrays
-	W, Wi, XD, H, Hi, YD, T, Ti, TD = readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr)
-	if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
-		xyear=True  #flag a cross-year season
+		#Read grads file to get needed coordinate arrays
+		W, Wi, XD, H, Hi, YD, T, Ti, TD = readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr)
+		if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
+			xyear=True  #flag a cross-year season
+		else:
+			#Ti=Ti+1
+			xyear=False
 	else:
-		#Ti=Ti+1
-		xyear=False
+		mi=monthdic[tar]
+		mf=monthdic[tar]
+
+		#Read grads file to get needed coordinate arrays
+		W, Wi, XD, H, Hi, YD, T, Ti, TD = readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr)
+		if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
+			xyear=True  #flag a cross-year season
+		else:
+			#Ti=Ti+1
+			xyear=False
 
 	Tarr = np.arange(Ti, Ti+T)
 	Xarr = np.linspace(Wi, Wi+W*XD,num=W+1)
