@@ -478,33 +478,52 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 				nsea=len(mons)
 				tar = mons[j]
 				mon=mol[tgts.index(tar)]
+				if mpref == 'CCA':
+					#f=open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+mons[j]+'_'+mon+str(fyr)+'.dat','rb')
+					#f=open('../output/'+models[i-1]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
+					f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+mon+'.dat','rb')
+					#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
+					for mo in range(M):
+						#Now we read the field
+						recl=struct.unpack('i',f.read(4))[0]
+						numval=int(recl/np.dtype('float32').itemsize) #this if for each time/EOF stamp
+						A0=np.fromfile(f,dtype='float32',count=numval)
+						endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
+						eofy[mo,:,:]= np.transpose(A0.reshape((Wy, Hy), order='F'))
+					eofy[eofy==-999.]=np.nan #nans
 
-				#f=open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+mons[j]+'_'+mon+str(fyr)+'.dat','rb')
-				#f=open('../output/'+models[i-1]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
-				f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+mon+'.dat','rb')
-				#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
-				for mo in range(M):
-					#Now we read the field
-					recl=struct.unpack('i',f.read(4))[0]
-					numval=int(recl/np.dtype('float32').itemsize) #this if for each time/EOF stamp
-					A0=np.fromfile(f,dtype='float32',count=numval)
-					endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
-					eofy[mo,:,:]= np.transpose(A0.reshape((Wy, Hy), order='F'))
-				eofy[eofy==-999.]=np.nan #nans
+					if obs == 'ENACTS-BD':
+						CS=ax[j][i].pcolormesh(np.linspace(87.6, 93.0,num=Wy), np.linspace(27.1, 20.4, num=Hy), eofy[mode,:,:],
+						vmin=-.1,vmax=.1,
+						cmap=current_cmap,
+						transform=ccrs.PlateCarree())
+					else:
+					#CS=ax[j][i].pcolormesh(np.linspace(loni, loni+Wy*XDy,num=Wy), np.linspace(lati+Hy*YDy, lati, num=Hy), eofy[mode,:,:],
+						CS=ax[j][i].pcolormesh(np.linspace(loni, lone,num=Wy), np.linspace(late, lati, num=Hy), eofy[mode,:,:],
+						vmin=-.1,vmax=.1,
+						cmap=current_cmap,
+						transform=ccrs.PlateCarree())
 
-				if obs == 'ENACTS-BD':
-					CS=ax[j][i].pcolormesh(np.linspace(87.6, 93.0,num=Wy), np.linspace(27.1, 20.4, num=Hy), eofy[mode,:,:],
-					vmin=-.1,vmax=.1,
-					cmap=current_cmap,
-					transform=ccrs.PlateCarree())
+					label = 'EOF charges'
 				else:
-				#CS=ax[j][i].pcolormesh(np.linspace(loni, loni+Wy*XDy,num=Wy), np.linspace(lati+Hy*YDy, lati, num=Hy), eofy[mode,:,:],
-					CS=ax[j][i].pcolormesh(np.linspace(loni, lone,num=Wy), np.linspace(late, lati, num=Hy), eofy[mode,:,:],
-					vmin=-.1,vmax=.1,
+					f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
+
+					#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
+					for mo in range(M):
+						#Now we read the field
+						recl=struct.unpack('i',f.read(4))[0]
+						numval=int(recl/np.dtype('float32').itemsize) #this if for each time/EOF stamp
+						A0=np.fromfile(f,dtype='float32',count=numval)
+						endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
+						eofx[mo,:,:]= np.transpose(A0.reshape((W, H), order='F'))
+
+					eofx[eofx==-999.]=np.nan #nans
+					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
+					vmin=-.105, vmax=.105,
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
+					label = 'EOF charges'
 
-				label = 'EOF charges'
 			else:
 				f=open('../output/'+models[i-1]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
 
