@@ -41,6 +41,7 @@
 import os
 import sys
 import warnings
+import platform
 import struct
 import xarray as xr
 import numpy as np
@@ -58,9 +59,11 @@ from matplotlib.colors import LinearSegmentedColormap
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import cartopy.feature as cfeature
 import fileinput
+#import pycurl
 import numpy as np
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
 
 warnings.filterwarnings("ignore")
 
@@ -1729,6 +1732,14 @@ def GetHindcasts( tini, tend, wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, nmont
 		# calls curl to download data
 		url=dic[model]
 		print("\n Hindcasts URL: \n\n "+url)
+		#with open(model+"_PRCP_"+tar+"_ini"+mon+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER,0)
+		#    c.setopt(pycurl.SSL_VERIFYHOST,0)
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"_PRCP_"+tar+"_ini"+mon+".tsv")
 
 
@@ -1756,6 +1767,15 @@ def GetHindcasts_RFREQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, wetday_thres
 		# calls curl to download data
 		url=dic[model]
 		print("\n Hindcasts URL: \n\n "+url)
+
+		#with open(model+"_RFREQ_"+tar+"_ini"+mon+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"_RFREQ_"+tar+"_ini"+mon+".tsv")
 
 def GetHindcasts_UQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, force_download):
@@ -1774,6 +1794,15 @@ def GetHindcasts_UQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 		# calls curl to download data
 		url=dic[model]
 		print("\n Hindcasts URL: \n\n "+url)
+
+		#with open(model+"_UQ_"+tar+"_ini"+mon+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"_UQ_"+tar+"_ini"+mon+".tsv")
 
 
@@ -1793,6 +1822,15 @@ def GetHindcasts_VQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 		# calls curl to download data
 		url=dic[model]
 		print("\n Hindcasts URL: \n\n "+url)
+
+		#with open(model+"_VQ_"+tar+"_ini"+mon+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"_VQ_"+tar+"_ini"+mon+".tsv")
 
 def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station, nmonths):
@@ -1813,7 +1851,18 @@ def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, forc
 			url='https://iridl.ldeo.columbia.edu/'+obs_source+'/T/%28Jan%201982%29/%28Dec%202010%29/RANGE/T/%28'+tar+'%29/seasonalAverage/Y/%28'+str(sla2)+'%29/%28'+str(nla2)+'%29/RANGEEDGES/X/%28'+str(wlo2)+'%29/%28'+str(elo2)+'%29/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BT%5Dcptv10.tsv'
 
 		print("\n Obs (Rainfall) data URL: \n\n "+url)
+
+		#with open("obs_"+predictand+"_"+tar+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > obs_"+predictand+"_"+tar+".tsv")
+
+
 		if obs_source=='home/.xchourio/.ACToday/.CHL/.prcp':   #weirdly enough, Ingrid sends the file with nfields=0. This is my solution for now. AGM
 			replaceAll("obs_"+predictand+"_"+tar+".tsv","cpt:nfields=0","cpt:nfields=1")
 
@@ -1838,6 +1887,14 @@ def GetObs_RFREQ(predictand, wlo2, elo2, sla2, nla2, wetday_threshold, threshold
 
 
 		print("\n Obs (Freq) data URL: \n\n "+url)
+		#with open("obs_"+predictand+"_"+tar+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > obs_"+predictand+"_"+tar+".tsv")
 
 def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, nmonths, model, force_download):
@@ -1865,7 +1922,14 @@ def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, nmonths, mod
 		print(dic[model])
 		url=dic[model]
 		print("\n Forecast URL: \n\n "+url)
-
+		#with open(model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download):
@@ -1884,6 +1948,14 @@ def GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, fo
 		# calls curl to download data
 		url=dic[model]
 		print("\n Forecast URL: \n\n "+url)
+		#with open(model+"fcst_UQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_UQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_VQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download):
@@ -1902,6 +1974,14 @@ def GetForecast_VQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, fo
 		# calls curl to download data
 		url=dic[model]
 		print("\n Forecast URL: \n\n "+url)
+		#with open(model+"fcst_VQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_VQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_RFREQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, wetday_threshold, model, force_download):
@@ -1927,6 +2007,14 @@ def GetForecast_RFREQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, wetday
 		# calls curl to download data
 		url=dic[model]
 		print("\n Forecast URL: \n\n "+url)
+		#with open(model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'wb') as f:
+		#    c = pycurl.Curl()
+		#    c.setopt(c.URL, url)
+		#    c.setopt(pycurl.SSL_VERIFYPEER, 0) #Do not attempt to verify
+		#    c.setopt(pycurl.SSL_VERIFYHOST, 0) #Do not attempt to verify
+		#    c.setopt(c.WRITEDATA, f)
+		#    c.perform()
+		#    c.close()
 		get_ipython().system("curl -k "+url+" > "+model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 
@@ -2372,7 +2460,11 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write("0\n")
 		f.write("0\n")
 		f.close()
-		get_ipython().system("cp params "+model+"_"+fprefix+"_"+mpref+"_"+tar+"_"+mon+".cpt")
+		if platform.system() == 'Windows':
+			get_ipython().system("copy params "+model+"_"+fprefix+"_"+mpref+"_"+tar+"_"+mon+".cpt")
+		else:
+			get_ipython().system("cp params "+model+"_"+fprefix+"_"+mpref+"_"+tar+"_"+mon+".cpt")
+
 
 def ensemblefiles(models,work):
 	"""A simple function for preparing the NextGen ensemble files for the DL
@@ -2381,14 +2473,26 @@ def ensemblefiles(models,work):
 	----------
 		models: array with selected models
 	"""
-	get_ipython().system("mkdir ../output/NextGen/")
+	get_ipython().system("mkdir ../output/NextGen/") #this is fine
 	#Go to folder and delate old TXT and TGZ files in folder
-	get_ipython().system("cd ../output/NextGen/; rm -Rf *_NextGen.tgz *.txt")
-	for i in range(len(models)):
-		get_ipython().system("cp ../*"+models[i]+"*.txt .")
+	if platform.system() == 'Windows':
+		get_ipython().system("cd ../output/NextGen/; del /s /q *_NextGen.tgz *.txt; rmdir /s /q *_NextGen.tgz *.txt")
+	else:
+		get_ipython().system("cd ../output/NextGen/; rm -Rf *_NextGen.tgz *.txt")
 
-	get_ipython().system("tar cvzf NextGen/"+work+"_NextGen.tgz *.txt")
-	get_ipython().system("pwd")
+	for i in range(len(models)):
+		if platform.system() == 'Windows':
+			get_ipython().system("copy ../*"+models[i]+"*.txt .")
+		else:
+			get_ipython().system("cp ../*"+models[i]+"*.txt .")
+
+	get_ipython().system("tar cvzf NextGen/"+work+"_NextGen.tgz *.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
+
+	if platform.system() == 'Windows':
+		get_ipython().system("echo %cd%")
+	else:
+		get_ipython().system('pwd')
+
 	print("Compressed file "+work+"_NextGen.tgz created in output/NextGen/")
 	print("Now send that file to your contact at the IRI")
 
