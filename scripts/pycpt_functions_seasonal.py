@@ -570,7 +570,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			#axins.yaxis.tick_left()
 			f.close()
 
-	plt.tight_layout()
+	#plt.tight_layout()
 			#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 			#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 			#plt.tight_layout()
@@ -968,7 +968,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				#axins.yaxis.tick_left()
 			f.close()
 
-	plt.tight_layout()
+	#plt.tight_layout()
 
 
 def read_forecast(fcst_type, model, predictand, mpref, mons, mon, fyr):
@@ -1161,7 +1161,7 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			cbar_fbr.set_label('AN Probability (%)') #, rotation=270)\
 
 
-	fig.tight_layout(pad=10.0)
+	#fig.tight_layout(pad=10.0)
 
 
 
@@ -1276,7 +1276,7 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	               	borderpad=0.1 )
 				cbar_bdet = fig.colorbar(CS_det, ax=ax[j][i],  cax=axins_det, orientation='horizontal', pad = 0.02)
 				cbar_bdet.set_label(labels[i])
-	fig.tight_layout(pad=10.0)
+#	fig.tight_layout(pad=10.0)
 
 
 def skilltab(score,wknam,lon1,lat1,lat2,lon2,loni,lone,lati,late,fprefix,mpref,training_season,mon,fday,nwk):
@@ -1510,7 +1510,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 
 		#plt.autoscale(enable=True)
 
-		plt.tight_layout()
+		#plt.tight_layout()
 		plt.subplots_adjust(hspace=0)
 		plt.subplots_adjust(bottom=0.15, top=0.9)
 		cbar = fig.colorbar(CS,ax=ax, orientation='vertical', pad=0.05)
@@ -1716,6 +1716,7 @@ def GetHindcasts( tini, tend, wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, nmont
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Hindcasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:
 
@@ -1752,6 +1753,7 @@ def GetHindcasts_RFREQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, wetday_thres
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Hindcasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:
 		dic = {	'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(ndays)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -1787,6 +1789,7 @@ def GetHindcasts_UQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Hindcasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:
 		dic = {'NCEP-CFSv2': 'http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.ENSEMBLE/.PGBF/.pressure_level/.VGRD/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.ENSEMBLE/.PGBF/.pressure_level/.SPFH/mul/P/850/VALUE/S/%2812%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -1815,6 +1818,7 @@ def GetHindcasts_VQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Hindcasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:
 		dic = {'NCEP-CFSv2': 'http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.ENSEMBLE/.PGBF/.pressure_level/.VGRD/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.ENSEMBLE/.PGBF/.pressure_level/.SPFH/mul/P/850/VALUE/S/%281%20'+mon+'%201982-2009%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -1842,6 +1846,7 @@ def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, forc
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Obs precip file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		if obs_source=='home/.xchourio/.ACToday/.CHL/.prcp':
 			url='http://iridl.ldeo.columbia.edu/'+obs_source+'/T/%28'+tar+'%29/seasonalAverage/-999/setmissing_value/%5B%5D%5BT%5Dcptv10.tsv'
@@ -1876,6 +1881,7 @@ def GetObs_RFREQ(predictand, wlo2, elo2, sla2, nla2, wetday_threshold, threshold
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Obs freq-rainfall file doesn't exist --SOLVING: downloading file")
 			force_download = True
+
 	if force_download:
 		#Need to work on it
 		if threshold_pctle:
@@ -1906,6 +1912,7 @@ def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, nmonths, mod
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Forecasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:
 		dic = {	'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -1941,6 +1948,7 @@ def GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, fo
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Forecasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:
 		dic = {'NCEP-CFSv2': 'http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.VGRD/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.SPFH/mul/P/850/VALUE/S/%281%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -1967,6 +1975,7 @@ def GetForecast_VQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, fo
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Forecasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:
 		dic = {'NCEP-CFSv2': 'http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.VGRD/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.SPFH/mul/P/850/VALUE/S/%281%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -1993,6 +2002,7 @@ def GetForecast_RFREQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, wetday
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
 			print("Forecasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
 			force_download = True
+
 	if force_download:
 		#dictionary:  #CFSv2 needs to be transformed to RFREQ!
 		dic = {	'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.FORECAST/.MONTHLY/.prec/S/%280000%201%20'+monf+'%20'+str(fyr)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -2468,26 +2478,39 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 
 def ensemblefiles(models,work):
 	"""A simple function for preparing the NextGen ensemble files for the DL
-
+	lion brand yarn
 	PARAMETERS
 	----------
 		models: array with selected models
 	"""
-	get_ipython().system("mkdir ../output/NextGen/") #this is fine
+	if platform.system() == 'Windows':
+		get_ipython().system("cd ../output")
+		print('cd ../output')
+		get_ipython().system("mkdir NextGen")
+		print('made NextGen')
+#		get_ipython().system("mkdir ../output/NextGen/")
+	else:
+		get_ipython().system("mkdir ../output/NextGen/") #this is fine
 	#Go to folder and delate old TXT and TGZ files in folder
 	if platform.system() == 'Windows':
-		get_ipython().system("cd ../output/NextGen/; del /s /q *_NextGen.tgz *.txt; rmdir /s /q *_NextGen.tgz *.txt")
+		get_ipython().system("del /s /q ./NextGen/*_NextGen.tgz")
+		print('del /s /q *_NextGen.tgz')
+		get_ipython().system("del /s /q ./NextGen/*.txt")
+		print('del /s /q *.txt')
 	else:
 		get_ipython().system("cd ../output/NextGen/; rm -Rf *_NextGen.tgz *.txt")
 
 	for i in range(len(models)):
 		if platform.system() == 'Windows':
-			get_ipython().system("copy ../*"+models[i]+"*.txt .")
+			get_ipython().system("cd ..")
+			print('cd ..')
+			get_ipython().system("copy *"+models[i]+"*.txt NextGen")
+			print('copy *' + models[i] + "*.txt ./NextGen/")
 		else:
 			get_ipython().system("cp ../*"+models[i]+"*.txt .")
 
 	get_ipython().system("tar cvzf NextGen/"+work+"_NextGen.tgz *.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
-
+	print("tar cvzf NextGen/"+work+"_NextGen.tgz *.txt")
 	if platform.system() == 'Windows':
 		get_ipython().system("echo %cd%")
 	else:
