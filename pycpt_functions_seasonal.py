@@ -169,7 +169,7 @@ def setup_params(PREDICTOR,obs,MOS,tini,tend, tgts):
 		ntrain= tend-tini + 1# length of training period
 
 	fprefix = PREDICTOR
-	return rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays
+	return rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays, 'FCST_xvPr', 'None'
 
 
 
@@ -539,7 +539,10 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			f.close()
 			model_names = ['obs']
 			model_names.extend(models)
-			fig.savefig('./images/EOF{}_{}_{}.png'.format(mode, model_names[i], mons[j]), dpi=500, bbox_inches='tight')
+	if models[1] == 'NextGen':
+		fig.savefig('./images/EOF{}_NextGen_{}.png'.format(mode+1,  mons[j]), dpi=500, bbox_inches='tight')
+	else:
+		fig.savefig('./images/EOF{}_Models_{}.png'.format(mode+1,  mons[j]), dpi=500, bbox_inches='tight')
 	plt.show()
 			#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 			#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
@@ -751,10 +754,13 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 					cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 				cbar.set_label(label) #, rotation=270)\
 				#axins.yaxis.tick_left()
-			filename = models[i] + '-' + mons[j] + '-' + score
-			fig.savefig('./images/' + filename + '.png', dpi=500, bbox_inches='tight')
 			f.close()
 		fig.tight_layout()
+	if models[0] == 'NextGen':
+		filename =  'NextGen_' + score
+	else:
+		filename = 'Models_' + score
+	fig.savefig('./images/' + filename + '.png', dpi=500, bbox_inches='tight')
 	plt.tight_layout()
 	plt.show()
 
@@ -954,7 +960,7 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			cbar_fbr = fig.colorbar(CS3, ax=ax[i][j],  cax=axins3_bottom, orientation='horizontal', ticks=bounds)
 			cbar_fbr.set_label('AN Probability (%)') #, rotation=270)\
 
-	fig.savefig('./images/NG_Probabilistic_RealtimeForecast_{}.png'.format(mons[j]), dpi=500, bbox_inches='tight')
+	fig.savefig('./images/NG_Probabilistic_RealtimeForecasts.png', dpi=500, bbox_inches='tight')
 	#fig.tight_layout(pad=10.0)
 
 
@@ -1072,7 +1078,7 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	               	borderpad=0.1 )
 				cbar_bdet = fig.colorbar(CS_det, ax=ax[i][j],  cax=axins_det, orientation='horizontal', pad = 0.02)
 				cbar_bdet.set_label(labels[i])
-	fig.savefig('./images/NG_Deterministic_RealtimeForecast_{}.png'.format(mons[j]), dpi=500, bbox_inches='tight')
+	fig.savefig('./images/NG_Deterministic_RealtimeForecasts.png', dpi=500, bbox_inches='tight')
 
 #	fig.tight_layout(pad=10.0)
 
