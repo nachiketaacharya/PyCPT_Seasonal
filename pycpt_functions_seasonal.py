@@ -1,43 +1,3 @@
-#This is PyCPT_functions_seasonal.py (version1.3) -- 15 Dec 2019
-#Authors: AG Muñoz (agmunoz@iri.columbia.edu), Andrew W. Robertson (awr@iri.columbia.edu) & Kyle Hall (kjh2171@columbia.edu)
-#Notes: be sure it matches version of PyCPT
-#Log:
-
-#*Aesthetic upgraes to pltmapff, pltmapprob fixed ----- kjch 12/17
-#*Attempted to fix overlapping years thing - switched Ti=Ti & Ti=Ti+1
-#*did some recon , making a guide
-
-#*Aesthetic upgrades & code improvements applied to plteofs ----- kjch 12/16
-
-#* Aesthetic upgrades  (plotmap only) ----- kjch 12/15
-# ---Implemented discrete colorbars
-# ---Removed borders btw map sections
-# ---Added Lat/Long lines
-# ---Should work for multiple targets & autofit
-# -----but idk how to run with multiple targets
-# ---Added model names to Output
-
-#Colorbar to the right
-#Obs plot small domain
-#save forecast maps
-#Get WriteCPT and NGEnsamble functions from angel
-#line 1610 - substitute years for tini and tend
-
-#one slide with new changes & main contributions
-#ones slide with old version of PyCPT
-
-#* Started simplifying functions, wrote readGrADSctl function; added functions to create the NextGen files for det skill assessment and plotting --AGM, Sep 2019
-#* Fixed bug with plotting functions when selecting a subset of the seasons, and added start time for forecast file in CPT script -- AGM, July 1st 2019
-#* Added VQ and UQ from CFSv2. User can now select the seasons to visualize in the skill and EOF maps. Fixed bug related to coordinate selection in CHIRPS, TRMM and CPC. -- AGM, June 13th 2019
-#* First Notebook seasonal version -- AGM, May 7th 2019
-#* Several PyCPT sub-seasonal versions (through v1.2) --see logs in that version 2018-present
-#* First iPython sub-seasonal version (Jupyter Notebook) -- AWR, 24 Jun 2018
-#* First similar version (BASH for CFSv2) by Muñoz and Chourio for the OLE2 -- 12 Dec 2010
-
-#To Do: (as June 8th, 2019 -- AGM)
-#	+ ELR proceedure is not reproducing results obtained in R or Matlab
-#	+ Simplify download functions: just one function, with the right arguments and dictionaries.
-#	+ Check Hindcasts and Forecast_RFREQ
 import os
 import sys
 import warnings
@@ -60,6 +20,7 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import cartopy.feature as cfeature
 import fileinput
 #import pycurl
+import subprocess
 import numpy as np
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -202,9 +163,13 @@ def setup_params(PREDICTOR,obs,MOS,tini,tend, tgts):
 	    mpref='ELRho'
 
 	L=['1'] #lead for file name (TO BE REMOVED --requested by Xandre)
-	ntrain= tend-tini+1 # length of training period
+	if tgts in ['Nov-Jan', 'Dec-Feb', 'Jan-Mar']:
+		ntrain= tend-tini # length of training period
+	else:
+		ntrain= tend-tini + 1# length of training period
+
 	fprefix = PREDICTOR
-	return rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays
+	return rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays, 'FCST_xvPr', 'None'
 
 
 
@@ -215,7 +180,7 @@ class MidpointNormalize(colors.Normalize):
 
     def __call__(self, value, clip=None):
         # Ignoring masked values and all kinds of edge cases to make a
-        # simple example...
+        # simple example..
         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
         return np.ma.masked_array(np.interp(value, x, y))
 
@@ -227,17 +192,17 @@ def replaceAll(file,searchExp,replaceExp):
 
 def readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr):
 	#Read grads binary file size H, W, T
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+str(models[0])+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("XDEF", fp):
 			W = int(line.split()[1])
 			Wi= float(line.split()[3])
 			XD= float(line.split()[4])
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+str(models[0])+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("YDEF", fp):
 			H = int(line.split()[1])
 			Hi= float(line.split()[3])
 			YD= float(line.split()[4])
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+str(models[0])+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("TDEF", fp):
 			T = int(line.split()[1])
 			Ti= int((line.split()[3])[-4:])
@@ -246,6 +211,7 @@ def readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr):
 
 def PrepFiles(fprefix, predictand, threshold_pctle, wlo1, wlo2,elo1, elo2, sla1, sla2, nla1, nla2, tgti, tgtf, mon, monf, fyr, os, wetday_threshold, tar, model, obs_source, hdate_last, force_download, station, ndays, nmonths, tini, tend):
 	"""Function to download (or not) the needed files"""
+	print('Preparing CPT files for '+model+' and initialization '+mon+'...')
 	if fprefix=='RFREQ':
 		GetObs_RFREQ(predictand, wlo2, elo2, sla2, nla2, wetday_threshold, threshold_pctle, tar, obs_source, hdate_last, force_download,station)
 		print('Obs:rfreq file ready to go')
@@ -371,28 +337,28 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 	if mpref=='None':
 		print('No EOFs are computed if MOS=None is used')
 		return
-
+	print('\n\n\n-------------EOF {}-------------\n'.format(mode+1))
 	nmods=len(models) + 1 #nmods + obs
 	nsea=len(mons)
 	tari=tgts[0]
 	model=models[0]
 	monn=mol[0]
 
-	with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
+	with open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
 		for line in lines_that_contain("XDEF", fp):
 			W = int(line.split()[1])
 			XD= float(line.split()[4])
-	with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
+	with open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
 		for line in lines_that_contain("YDEF", fp):
 			H = int(line.split()[1])
 			YD= float(line.split()[4])
 
 	if mpref=='CCA':
-		with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
+		with open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
 			for line in lines_that_contain("XDEF", fp):
 				Wy = int(line.split()[1])
 				XDy= float(line.split()[4])
-		with open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
+		with open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+monn+'.ctl', "r") as fp:
 			for line in lines_that_contain("YDEF", fp):
 				Hy = int(line.split()[1])
 				YDy= float(line.split()[4])
@@ -402,7 +368,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 	#plt.figure(figsize=(20,10))
 	#fig, ax = plt.subplots(figsize=(20,15),sharex=True,sharey=True)
-	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, sharex=False,sharey=False, figsize=(6,6*nmods), subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, sharex=False,sharey=False, figsize=(10*nsea,6*nmods), subplot_kw={'projection': ccrs.PlateCarree()})
 	if nsea == 1:
 		ax = [ax]
 	if nmods == 1:
@@ -425,12 +391,12 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 
 			if i == 0 and obs == 'ENACTS-BD':
-				ax[j][i].set_extent([87.5,93,20.5,27], crs=ccrs.PlateCarree())
+				ax[i][j].set_extent([87.5,93,20.5,27], crs=ccrs.PlateCarree())
 			else:
 				if mpref=='PCR':
-					ax[j][i].set_extent([loni,loni+W*XD,lati,lati+H*YD], crs=ccrs.PlateCarree())  #EOF domains will look different between CCA and PCR if X and Y domains are different
+					ax[i][j].set_extent([loni,loni+W*XD,lati,lati+H*YD], crs=ccrs.PlateCarree())  #EOF domains will look different between CCA and PCR if X and Y domains are different
 				else:
-					ax[j][i].set_extent([loni,loni+Wy*XDy,lati,lati+Hy*YDy], crs=ccrs.PlateCarree())
+					ax[i][j].set_extent([loni,loni+Wy*XDy,lati,lati+Hy*YDy], crs=ccrs.PlateCarree())
 
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
@@ -440,13 +406,13 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 				scale='10m',
 				facecolor='none')
 
-			ax[j][i].add_feature(feature.LAND)
-			#ax[j][i].add_feature(feature.COASTLINE)
+			ax[i][j].add_feature(feature.LAND)
+			#ax[i][j].add_feature(feature.COASTLINE)
 
 			#tick_spacing=0.5
 			#ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
 
-			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+			pl=ax[i][j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 			pl.xlabels_top = False
 			pl.ylabels_left = True
@@ -454,37 +420,37 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 			pl.xlabels_bottom = True
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax[j][i].add_feature(states_provinces, edgecolor='black')
+			ax[i][j].add_feature(states_provinces, edgecolor='black')
 
 			if obs == 'ENACTS-BD' and i ==0:
-				ax[j][i].set_ybound(lower=20.5, upper=27)
-				ax[j][i].set_xbound(lower=87.5, upper=93)
+				ax[i][j].set_ybound(lower=20.5, upper=27)
+				ax[i][j].set_xbound(lower=87.5, upper=93)
 			else:
-				ax[j][i].set_ybound(lower=lati, upper=late)
-				ax[j][i].set_xbound(lower=loni, upper=lone)
+				ax[i][j].set_ybound(lower=lati, upper=late)
+				ax[i][j].set_xbound(lower=loni, upper=lone)
 
 
 			if j == 0:
 				if i == 0:
-					ax[j][i].text(-0.42, 0.5, 'Obs',rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
+					ax[i][j].text(-0.42, 0.5, 'Obs',rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
 				else:
-					ax[j][i].text(-0.42, 0.5, models[i-1],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
+					ax[i][j].text(-0.42, 0.5, models[i-1],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
 
 			if i == 0:
-				ax[j][i].set_title(mons[j])
+				ax[i][j].set_title(mons[j])
 
 			#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
 			if i ==0:
-				tari=tgts[0]
+				tari=tgts[j]
 				model=models[0]
 				monn=mol[0]
 				nsea=len(mons)
 				tar = mons[j]
-				mon=mol[tgts.index(tar)]
+				mon=mol[j]
 				if mpref == 'CCA':
-					#f=open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+mons[j]+'_'+mon+str(fyr)+'.dat','rb')
-					#f=open('../output/'+models[i-1]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
-					f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tari+'_'+mon+'.dat','rb')
+					#f=open('./output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+mons[j]+'_'+mon+str(fyr)+'.dat','rb')
+					#f=open('./output/'+models[i-1]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
+					f=open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tar+'_'+mon+'.dat','rb')
 					#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 					for mo in range(M):
 						#Now we read the field
@@ -496,20 +462,21 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 					eofy[eofy==-999.]=np.nan #nans
 
 					if obs == 'ENACTS-BD':
-						CS=ax[j][i].pcolormesh(np.linspace(87.6, 93.0,num=Wy), np.linspace(27.1, 20.4, num=Hy), eofy[mode,:,:],
+						CS=ax[i][j].pcolormesh(np.linspace(87.6, 93.0,num=Wy), np.linspace(27.1, 20.4, num=Hy), eofy[mode,:,:],
 						vmin=-.1,vmax=.1,
 						cmap=current_cmap,
 						transform=ccrs.PlateCarree())
 					else:
-					#CS=ax[j][i].pcolormesh(np.linspace(loni, loni+Wy*XDy,num=Wy), np.linspace(lati+Hy*YDy, lati, num=Hy), eofy[mode,:,:],
-						CS=ax[j][i].pcolormesh(np.linspace(loni, lone,num=Wy), np.linspace(late, lati, num=Hy), eofy[mode,:,:],
+					#CS=ax[i][j].pcolormesh(np.linspace(loni, loni+Wy*XDy,num=Wy), np.linspace(lati+Hy*YDy, lati, num=Hy), eofy[mode,:,:],
+						CS=ax[i][j].pcolormesh(np.linspace(loni, lone,num=Wy), np.linspace(late, lati, num=Hy), eofy[mode,:,:],
 						vmin=-.1,vmax=.1,
 						cmap=current_cmap,
 						transform=ccrs.PlateCarree())
 
 					label = 'EOF charges'
 				else:
-					f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
+					mon=mol[j]
+					f=open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
 
 					#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 					for mo in range(M):
@@ -521,14 +488,15 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 						eofx[mo,:,:]= np.transpose(A0.reshape((W, H), order='F'))
 
 					eofx[eofx==-999.]=np.nan #nans
-					CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
+					CS=ax[i][j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
 					vmin=-.105, vmax=.105,
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
 					label = 'EOF charges'
 
 			else:
-				f=open('../output/'+models[i-1]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
+				mon=mol[j]
+				f=open('./output/'+models[i-1]+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+mons[j]+'_'+mon+'.dat','rb')
 
 				#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 				for mo in range(M):
@@ -540,7 +508,7 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 					eofx[mo,:,:]= np.transpose(A0.reshape((W, H), order='F'))
 
 				eofx[eofx==-999.]=np.nan #nans
-				CS=ax[j][i].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
+				CS=ax[i][j].pcolormesh(np.linspace(loni, loni+W*XD,num=W), np.linspace(lati+H*YD, lati, num=H), eofx[mode,:,:],
 				vmin=-.105, vmax=.105,
 				cmap=current_cmap,
 				transform=ccrs.PlateCarree())
@@ -548,32 +516,34 @@ def plteofs(models,predictand,mode,M,loni,lone,lati,late,fprefix,mpref,tgts,mol,
 
 			is_left = False
 			if is_left:
-				axins = inset_axes(ax[j][i],
+				axins = inset_axes(ax[i][j],
 	                   width="5%",  # width = 5% of parent_bbox width
 	                   height="100%",  # height : 50%
 	                   loc='center left',
 	                   bbox_to_anchor=(-0.22, 0., 1, 1),
-	                   bbox_transform=ax[j][i].transAxes,
+	                   bbox_transform=ax[i][j].transAxes,
 	                   borderpad=0.1,
 	                   )
 			else:
-				axins = inset_axes(ax[j][i],
+				axins = inset_axes(ax[i][j],
 	                   width="5%",  # width = 5% of parent_bbox width
 	                   height="100%",  # height : 50%
 	                   loc='center right',
 	                   bbox_to_anchor=(0., 0., 1.15, 1),
-	                   bbox_transform=ax[j][i].transAxes,
+	                   bbox_transform=ax[i][j].transAxes,
 	                   borderpad=0.1,
 	                   )
-			cbar = plt.colorbar(CS,ax=ax[j][i], cax=axins, orientation='vertical', pad=0.01, ticks= [-0.09, -0.075, -0.06, -0.045, -0.03, -0.015, 0, 0.015, 0.03, 0.045, 0.06, 0.075, 0.09])
+			cbar = plt.colorbar(CS,ax=ax[i][j], cax=axins, orientation='vertical', pad=0.01, ticks= [-0.09, -0.075, -0.06, -0.045, -0.03, -0.015, 0, 0.015, 0.03, 0.045, 0.06, 0.075, 0.09])
 			#cbar.set_label(label) #, rotation=270)
 			#axins.yaxis.tick_left()
 			f.close()
 			model_names = ['obs']
 			model_names.extend(models)
-			fig.savefig('../images/EOF{}_{}_{}.png'.format(mode, model_names[i], mons[j]), dpi=500, bbox_inches='tight')
-
-	#plt.tight_layout()
+	if models[1] == 'NextGen':
+		fig.savefig('./images/EOF{}_NextGen_{}.png'.format(mode+1,  mons[j]), dpi=500, bbox_inches='tight')
+	else:
+		fig.savefig('./images/EOF{}_Models_{}.png'.format(mode+1,  mons[j]), dpi=500, bbox_inches='tight')
+	plt.show()
 			#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 			#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 			#plt.tight_layout()
@@ -603,7 +573,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 		x_offset = 0
 		y_offset = 0
 
-	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(6, 6*nmods),sharex=False,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=nmods, ncols=nsea, figsize=(6*nsea, 6*nmods),sharex=False,sharey=False, subplot_kw={'projection': ccrs.PlateCarree()})
 	#fig = plt.figure(figsize=(20,40))
 	#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
 	#ax.append(plt.subplot2grid((nmods+1, nsea), (nmods, 0), colspan=nsea ) )
@@ -619,16 +589,17 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 		current_cmap = make_cmap(14)
 	#current_cmap.set_bad('white',1.0)
 	#current_cmap.set_under('white', 1.0)
-
+	print()
+	print(score)
 	for i in range(nmods):
 		for j in range(nsea):
-			mon=mo[tgts.index(mons[j])]
+			mon=mons[j]
 			#Read grads binary file size H, W  --it assumes all files have the same size, and that 2AFC exists
-			with open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+mons[j]+'_'+mon+'.ctl', "r") as fp:
+			with open('./output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+tgts[j]+'_'+mon+'.ctl', "r") as fp:
 				for line in lines_that_contain("XDEF", fp):
 					W = int(line.split()[1])
 					XD= float(line.split()[4])
-			with open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+mons[j]+'_'+mon+'.ctl', "r") as fp:
+			with open('./output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+tgts[j]+'_'+mon+'.ctl', "r") as fp:
 				for line in lines_that_contain("YDEF", fp):
 					H = int(line.split()[1])
 					YD= float(line.split()[4])
@@ -637,9 +608,9 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 
 			#ax = plt.subplot(nmods,nsea, k, projection=ccrs.PlateCarree())
 			if obs == 'ENACTS-BD':
-				ax[j][i].set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
+				ax[i][j].set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
 			else:
-				ax[j][i].set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
+				ax[i][j].set_extent([loni+x_offset,loni+W*XD+x_offset,lati+y_offset,lati+H*YD+y_offset], ccrs.PlateCarree())
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
 				category='cultural',
@@ -648,9 +619,9 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				scale='10m',
 				facecolor='none')
 
-			ax[j][i].add_feature(feature.LAND)
-			#ax[j][i].add_feature(feature.COASTLINE)
-			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+			ax[i][j].add_feature(feature.LAND)
+			#ax[i][j].add_feature(feature.COASTLINE)
+			pl=ax[i][j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 			pl.xlabels_top = False
 			pl.ylabels_left = True
@@ -660,19 +631,19 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 			pl.xlabels_bottom = True
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax[j][i].add_feature(states_provinces, edgecolor='black')
-			ax[j][i].set_ybound(lower=lati, upper=late)
+			ax[i][j].add_feature(states_provinces, edgecolor='black')
+			ax[i][j].set_ybound(lower=lati, upper=late)
 
 			if j == 0:
-				ax[j][i].text(-0.42, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
+				ax[i][j].text(-0.42, 0.5, models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
 			if i == 0:
-				ax[j][i].set_title(mons[j])
+				ax[i][j].set_title(tgts[j])
 			#for i, axi in enumerate(axes):  # need to enumerate to slice the data
 			#	axi.set_ylabel(model, fontsize=12)
 
 
 			if score == 'CCAFCST_V' or score == 'PCRFCST_V':
-				f=open('../output/'+models[i]+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
+				f=open('./output/'+models[i]+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
 				recl=struct.unpack('i',f.read(4))[0]
 				numval=int(recl/np.dtype('float32').itemsize)
 				#Now we read the field
@@ -680,12 +651,12 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				var = np.transpose(A.reshape((W, H), order='F'))
 				var[var==-999.]=np.nan #only sensible values
 
-				CS=ax[j][i].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
+				CS=ax[i][j].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
 					#vmin=-max(np.max(var),np.abs(np.min(var))), #vmax=np.max(var),
 					norm=MidpointNormalize(midpoint=0.),
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
-				ax[j][i].set_title("Deterministic forecast for Week "+str(wk))
+				ax[i][j].set_title("Deterministic forecast for Week "+str(wk))
 				if fprefix == 'RFREQ':
 					label ='Freq Rainy Days (days)'
 				elif fprefix == 'PRCP':
@@ -696,7 +667,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				#current_cmap.set_under('white', 1.0)
 			else:
 				#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-				f=open('../output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_'+score+'_'+mons[j]+'_'+mon+'.dat','rb')
+				f=open('./output/'+models[i]+'_'+fprefix+predictand+'_'+mpref+'_'+score+'_'+tgts[j]+'_'+mon+'.dat','rb')
 				recl=struct.unpack('i',f.read(4))[0]
 				numval=int(recl/np.dtype('float32').itemsize)
 				#Now we read the field
@@ -705,7 +676,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 				#define colorbars, depending on each score	--This can be easily written as a function
 				if score == '2AFC':
 					var[var<0]=np.nan #only positive values
-					CS=ax[j][i].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
+					CS=ax[i][j].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
 					vmin=0,vmax=100,
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
@@ -713,14 +684,14 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 
 				if score == 'RMSE':
 					var[var<0]=np.nan #only positive values
-					CS=ax[j][i].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
+					CS=ax[i][j].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
 					vmin=0,vmax=1000,
 					cmap=plt.get_cmap('Reds', 10),
 					transform=ccrs.PlateCarree())
 					label = 'RMSE'
 				if score == 'RocAbove' or score=='RocBelow':
 					var[var<0]=np.nan #only positive values
-					CS=ax[j][i].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
+					CS=ax[i][j].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
 					vmin=0,vmax=1,
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
@@ -728,7 +699,7 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 
 				if score == 'Spearman' or score=='Pearson':
 					var[var<-1.]=np.nan #only sensible values
-					CS=ax[j][i].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
+					CS=ax[i][j].pcolormesh(np.linspace(loni+x_offset, loni+W*XD+x_offset,num=W), np.linspace(lati+H*YD+y_offset, lati+y_offset, num=H), var,
 					vmin=-1.05,vmax=1.05,
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
@@ -738,64 +709,68 @@ def pltmap(models,predictand,score,loni,lone,lati,late,fprefix,mpref,tgts, mo, m
 			#Make true if you want cbar on left, default is cbar on right
 			is_left = False
 			if is_left:
-				axins = inset_axes(ax[j][i],
+				axins = inset_axes(ax[i][j],
 	                   width="5%",  # width = 5% of parent_bbox width
 	                   height="100%",  # height : 50%
 	                   loc='center left',
 	                   bbox_to_anchor=(-0.22, 0., 1, 1),
-	                   bbox_transform=ax[j][i].transAxes,
+	                   bbox_transform=ax[i][j].transAxes,
 	                   borderpad=0.1,
 	                   )
 				if score in ['Pearson','Spearman']:
 					 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
-					 cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
+					 cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
 				elif score == '2AFC':
 					bounds = [10*gt for gt in range(1,10, 2)]
-					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+					cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 				elif score == 'RMSE':
 					bounds = [10*gt for gt in range(1,10, 2)]
-					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+					cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
 				else:
 					bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
-					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+					cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 				#cbar.set_label(label) #, rotation=270)\
 				#axins.yaxis.tick_left()
 			else:
-				axins = inset_axes(ax[j][i],
+				axins = inset_axes(ax[i][j],
 	                   width="5%",  # width = 5% of parent_bbox width
 	                   height="100%",  # height : 50%
 	                   loc='center right',
 	                   bbox_to_anchor=(0., 0., 1.15, 1),
-	                   bbox_transform=ax[j][i].transAxes,
+	                   bbox_transform=ax[i][j].transAxes,
 	                   borderpad=0.1,
 	                   )
 				if score in ['Pearson','Spearman']:
 					 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
-					 cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
+					 cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
 				elif score == '2AFC':
 					bounds = [10*gt for gt in range(1,10, 2)]
-					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+					cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 				elif score == 'RMSE':
 					bounds = [10*gt for gt in range(1,10, 2)]
-					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+					cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
 				else:
 					bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
-					cbar = fig.colorbar(CS, ax=ax[j][i], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
-				#cbar.set_label(label) #, rotation=270)\
+					cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+				cbar.set_label(label) #, rotation=270)\
 				#axins.yaxis.tick_left()
-			filename = models[i] + '-' + mons[j] + '-' + score
-			fig.savefig('../images/' + filename + '.png', dpi=500, bbox_inches='tight')
 			f.close()
-
-	#plt.tight_layout()
+		fig.tight_layout()
+	if models[0] == 'NextGen':
+		filename =  'NextGen_' + score
+	else:
+		filename = 'Models_' + score
+	fig.savefig('./images/' + filename + '.png', dpi=500, bbox_inches='tight')
+	plt.tight_layout()
+	plt.show()
 
 
 
 def read_forecast(fcst_type, model, predictand, mpref, mons, mon, fyr):
 	if fcst_type == 'deterministic':
-		f = open("./" + model + '_' + predictand + '_' + mpref + 'FCST_mu_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
+		f = open("./output/" + model + '_' + predictand + '_' + mpref + 'FCST_mu_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
 	elif fcst_type == 'probabilistic':
-		f = open("./" + model + '_' + predictand + '_' + mpref + 'FCST_P_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
+		f = open("./output/" + model + '_' + predictand + '_' + mpref + 'FCST_P_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
 	else:
 		print('invalid fcst_type')
 		return
@@ -851,14 +826,15 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	list_det_by_season = [[] for i in range(nsea)]
 	for i in range(nmods):
 		for j in range(nsea):
-			plats, plongs, av = read_forecast('probabilistic', models[i], predictand, mpref, mons[j], mon, fyr )
+			plats, plongs, av = read_forecast('probabilistic', models[i], predictand, mpref, mons[j], mon[j], fyr )
 			for kl in range(av.shape[0]):
 				list_probabilistic_by_season[j][kl].append(av[kl])
-			dlats, dlongs, av = read_forecast('deterministic', models[i], predictand, mpref, mons[j], mon, fyr )
+			dlats, dlongs, av = read_forecast('deterministic', models[i], predictand, mpref, mons[j], mon[j], fyr )
 			list_det_by_season[j].append(av[0])
 
 	ng_probfcst_by_season = []
 	ng_detfcst_by_season = []
+	pbn, pn, pan = [],[],[]
 	for j in range(nsea):
 		p_bn_array = np.asarray(list_probabilistic_by_season[j][0])
 		p_n_array = np.asarray(list_probabilistic_by_season[j][1])
@@ -879,15 +855,18 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 		p_bn[np.where(max_ndxs!= 0)] = np.nan
 		p_n[np.where(max_ndxs!= 1)] = np.nan
 		p_an[np.where(max_ndxs!= 2)] = np.nan
+		pbn.append(p_bn)
+		pn.append(p_n)
+		pan.append(p_an)
 
-	fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(20, nsea*8), sharex=False,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=xdim, ncols=nsea, figsize=(nsea*13, xdim*10), sharex=False,sharey=False, subplot_kw={'projection': ccrs.PlateCarree()})
 
 	if nsea == 1:
 		ax = [ax]
 	ax = [ax]
 
-	for j in range(nsea):
-		for i in range(xdim):
+	for i in range(xdim):
+		for j in range(nsea):
 			current_cmap = plt.get_cmap('BrBG')
 			current_cmap.set_under('white', 0.0)
 
@@ -897,7 +876,7 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 
 			lats, longs = plats, plongs
 
-			ax[j][i].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
+			ax[i][j].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
 
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
@@ -907,9 +886,9 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 				scale='10m',
 				facecolor='none')
 
-			ax[j][i].add_feature(feature.LAND)
-			#ax[j][i].add_feature(feature.COASTLINE)
-			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+			ax[i][j].add_feature(feature.LAND)
+			#ax[i][j].add_feature(feature.COASTLINE)
+			pl=ax[i][j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 			pl.xlabels_top = False
 			pl.ylabels_left = True
@@ -921,27 +900,28 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			pl.yformatter = LATITUDE_FORMATTER
 			pl.xlabel_style = {'size': 8}#'rotation': 'vertical'}
 
-			ax[j][i].add_feature(states_provinces, edgecolor='black')
-			ax[j][i].set_ybound(lower=lati, upper=late)
-			if i == 0:
-				ax[j][i].text(-0.25, 0.5, mons[j],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
+			ax[i][j].add_feature(states_provinces, edgecolor='black')
+			ax[i][j].set_ybound(lower=lati, upper=late)
+			titles = ["Deterministic Forecast", "Probabilistic Forecast (Dominant Tercile)"]
 
-			#fancy
-			titles = [ "Probabilistic Forecast (Dominant Tercile)"]
-			labels = ['Rainfall', 'Probability (%)']
-			ax[j][i].set_title(titles[i])
+
+			if j == 0:
+				ax[i][j].text(-0.25, 0.5, "Probabilistic Forecast (Dominant Tercile)",rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
+
+			labels = ['Rainfall (mm)', 'Probability (%)']
+			ax[i][j].set_title(mons[j])
 
 
 			#fancy probabilistic
-			CS1 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_bn,
+			CS1 = ax[i][j].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), pbn[j],
 				vmin=35, vmax=80,
 				#norm=MidpointNormalize(midpoint=0.),
 				cmap=current_cmap_copper)
-			CS2 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_n,
+			CS2 = ax[i][j].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), pn[j],
 				vmin=35, vmax=55,
 				#norm=MidpointNormalize(midpoint=0.),
 				cmap=current_cmap_binary)
-			CS3 = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), p_an,
+			CS3 = ax[i][j].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), pan[j],
 				vmin=35, vmax=80,
 				#norm=MidpointNormalize(midpoint=0.),
 				cmap=current_cmap_ylgn)
@@ -950,37 +930,37 @@ def plt_ng_probabilistic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			nbounds = [40,45,50]
 
 			#fancy probabilistic cb bottom
-			axins_f_bottom = inset_axes(ax[j][i],
+			axins_f_bottom = inset_axes(ax[i][j],
             	width="40%",  # width = 5% of parent_bbox width
                	height="5%",  # height : 50%
                	loc='lower left',
                	bbox_to_anchor=(-0.2, -0.15, 1.2, 1),
-               	bbox_transform=ax[j][i].transAxes,
+               	bbox_transform=ax[i][j].transAxes,
                	borderpad=0.1 )
-			axins2_bottom = inset_axes(ax[j][i],
+			axins2_bottom = inset_axes(ax[i][j],
             	width="20%",  # width = 5% of parent_bbox width
                	height="5%",  # height : 50%
                	loc='lower center',
                	bbox_to_anchor=(-0.0, -0.15, 1, 1),
-               	bbox_transform=ax[j][i].transAxes,
+               	bbox_transform=ax[i][j].transAxes,
                	borderpad=0.1 )
-			axins3_bottom = inset_axes(ax[j][i],
+			axins3_bottom = inset_axes(ax[i][j],
             	width="40%",  # width = 5% of parent_bbox width
                	height="5%",  # height : 50%
                	loc='lower right',
                	bbox_to_anchor=(0, -0.15, 1.2, 1),
-               	bbox_transform=ax[j][i].transAxes,
+               	bbox_transform=ax[i][j].transAxes,
                	borderpad=0.1 )
-			cbar_fbl = fig.colorbar(CS1, ax=ax[j][i], cax=axins_f_bottom, orientation='horizontal', ticks=bounds)
+			cbar_fbl = fig.colorbar(CS1, ax=ax[i][j], cax=axins_f_bottom, orientation='horizontal', ticks=bounds)
 			cbar_fbl.set_label('BN Probability (%)') #, rotation=270)\
 
-			cbar_fbc = fig.colorbar(CS2, ax=ax[j][i],  cax=axins2_bottom, orientation='horizontal', ticks=nbounds)
+			cbar_fbc = fig.colorbar(CS2, ax=ax[i][j],  cax=axins2_bottom, orientation='horizontal', ticks=nbounds)
 			cbar_fbc.set_label('N Probability (%)') #, rotation=270)\
 
-			cbar_fbr = fig.colorbar(CS3, ax=ax[j][i],  cax=axins3_bottom, orientation='horizontal', ticks=bounds)
+			cbar_fbr = fig.colorbar(CS3, ax=ax[i][j],  cax=axins3_bottom, orientation='horizontal', ticks=bounds)
 			cbar_fbr.set_label('AN Probability (%)') #, rotation=270)\
 
-	fig.savefig('../images/NG_Probabilistic_RealtimeForecast.png', dpi=500, bbox_inches='tight')
+	fig.savefig('./images/NG_Probabilistic_RealtimeForecasts.png', dpi=500, bbox_inches='tight')
 	#fig.tight_layout(pad=10.0)
 
 
@@ -1005,11 +985,11 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 	list_det_by_season = [[] for i in range(nsea)]
 	for i in range(nmods):
 		for j in range(nsea):
-			plats, plongs, av = read_forecast('probabilistic', models[i], predictand, mpref, mons[j], mon, fyr )
+			plats, plongs, av = read_forecast('probabilistic', models[i], predictand, mpref, mons[j], mon[j], fyr )
 			list_probabilistic_by_season[j][0].append(av[0])
 			list_probabilistic_by_season[j][1].append(av[1])
 			list_probabilistic_by_season[j][2].append(av[2])
-			dlats, dlongs, av = read_forecast('deterministic', models[i], predictand, mpref, mons[j], mon, fyr )
+			dlats, dlongs, av = read_forecast('deterministic', models[i], predictand, mpref, mons[j], mon[j], fyr )
 			list_det_by_season[j].append(av[0])
 
 	ng_probfcst_by_season = []
@@ -1019,7 +999,7 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 		d_nanmean = np.nanmean(d_array, axis=0)
 		ng_detfcst_by_season.append(d_nanmean)
 
-	fig, ax = plt.subplots(nrows=nsea, ncols=xdim, figsize=(20, nsea*8), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+	fig, ax = plt.subplots(nrows=xdim, ncols=nsea, figsize=(nsea*13, xdim*10), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
 	if nsea == 1:
 		ax = [ax]
 	ax = [ax]
@@ -1027,14 +1007,14 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 
 
 
-	for j in range(nsea):
-		for i in range(xdim):
+	for i in range(xdim):
+		for j in range(nsea):
 			current_cmap = plt.get_cmap('BrBG')
 			current_cmap.set_bad('white',0.0)
 			current_cmap.set_under('white', 0.0)
 
 			lats, longs = dlats, dlongs
-			ax[j][i].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
+			ax[i][j].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
 
 			#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 			states_provinces = feature.NaturalEarthFeature(
@@ -1044,9 +1024,9 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 				scale='10m',
 				facecolor='none')
 
-			ax[j][i].add_feature(feature.LAND)
-			#ax[j][i].add_feature(feature.COASTLINE)
-			pl=ax[j][i].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+			ax[i][j].add_feature(feature.LAND)
+			#ax[i][j].add_feature(feature.COASTLINE)
+			pl=ax[i][j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 				  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
 			pl.xlabels_top = False
 			pl.ylabels_left = True
@@ -1056,47 +1036,49 @@ def plt_ng_deterministic(models,predictand,loni,lone,lati,late,fprefix,mpref,mon
 			pl.xlabels_bottom = True
 			pl.xformatter = LONGITUDE_FORMATTER
 			pl.yformatter = LATITUDE_FORMATTER
-			ax[j][i].add_feature(states_provinces, edgecolor='black')
-			ax[j][i].set_ybound(lower=lati, upper=late)
+			ax[i][j].add_feature(states_provinces, edgecolor='black')
+			ax[i][j].set_ybound(lower=lati, upper=late)
 			pl.xlabel_style = {'size': 8}#'rotation': 'vertical'}
 
-			if i == 0:
-				ax[j][i].text(-0.25, 0.5, mons[j],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[j][i].transAxes)
-
 			titles = ["Deterministic Forecast", "Probabilistic Forecast (Dominant Tercile)"]
+
+
+			if j == 0:
+				ax[i][j].text(-0.25, 0.5, "Deterministic Forecast",rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
+
 			labels = ['Rainfall (mm)', 'Probability (%)']
-			ax[j][i].set_title(titles[i])
+			ax[i][j].set_title(mons[j])
 
 			#fancy deterministic
 			var = ng_detfcst_by_season[j]
-			CS_det = ax[j][i].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
+			CS_det = ax[i][j].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
 				norm=MidpointNormalize(midpoint=0.),
 				cmap=current_cmap)
 
 			if cbar_loc == 'left':
 				#fancy deterministic cb left
-				axins_det = inset_axes(ax[j][i],
+				axins_det = inset_axes(ax[i][j],
 	            	width="5%",  # width = 5% of parent_bbox width
 	               	height="100%",  # height : 50%
 	               	loc='center left',
 	               	bbox_to_anchor=(-0.25, 0., 1, 1),
-	               	bbox_transform=ax[j][i].transAxes,
+	               	bbox_transform=ax[i][j].transAxes,
 	               	borderpad=0.1 )
-				cbar_ldet = fig.colorbar(CS_det, ax=ax[j][i], cax=axins_det,  orientation='vertical', pad=0.02)
+				cbar_ldet = fig.colorbar(CS_det, ax=ax[i][j], cax=axins_det,  orientation='vertical', pad=0.02)
 				cbar_ldet.set_label(labels[i]) #, rotation=270)\
 				axins_det.yaxis.tick_left()
 			else:
 				#fancy deterministic cb bottom
-				axins_det = inset_axes(ax[j][i],
+				axins_det = inset_axes(ax[i][j],
 	            	width="100%",  # width = 5% of parent_bbox width
 	               	height="5%",  # height : 50%
 	               	loc='lower center',
 	               	bbox_to_anchor=(-0.1, -0.15, 1.1, 1),
-	               	bbox_transform=ax[j][i].transAxes,
+	               	bbox_transform=ax[i][j].transAxes,
 	               	borderpad=0.1 )
-				cbar_bdet = fig.colorbar(CS_det, ax=ax[j][i],  cax=axins_det, orientation='horizontal', pad = 0.02)
+				cbar_bdet = fig.colorbar(CS_det, ax=ax[i][j],  cax=axins_det, orientation='horizontal', pad = 0.02)
 				cbar_bdet.set_label(labels[i])
-	fig.savefig('../images/NG_Deterministic_RealtimeForecast.png', dpi=500, bbox_inches='tight')
+	fig.savefig('./images/NG_Deterministic_RealtimeForecasts.png', dpi=500, bbox_inches='tight')
 
 #	fig.tight_layout(pad=10.0)
 
@@ -1112,11 +1094,11 @@ def skilltab(score,wknam,lon1,lat1,lat2,lon2,loni,lone,lati,late,fprefix,mpref,t
 	"""
 
 	#Read grads binary file size H, W  --it assumes all files have the same size, and that 2AFC exists
-	with open('../output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk1.ctl', "r") as fp:
+	with open('./output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk1.ctl', "r") as fp:
 		for line in lines_that_contain("XDEF", fp):
 			W = int(line.split()[1])
 			XD= float(line.split()[4])
-	with open('../output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk1.ctl', "r") as fp:
+	with open('./output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk1.ctl', "r") as fp:
 		for line in lines_that_contain("YDEF", fp):
 			H = int(line.split()[1])
 			YD= float(line.split()[4])
@@ -1137,7 +1119,7 @@ def skilltab(score,wknam,lon1,lat1,lat2,lon2,loni,lone,lati,late,fprefix,mpref,t
 		wk=L+1
 		for S in score:
 			#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-			f=open('../output/'+model+'_'+fprefix+'_'+mpref+'_'+str(S)+'_'+training_season+'_wk'+str(wk)+'.dat','rb')
+			f=open('./output/'+model+'_'+fprefix+'_'+mpref+'_'+str(S)+'_'+training_season+'_wk'+str(wk)+'.dat','rb')
 			recl=struct.unpack('i',f.read(4))[0]
 			numval=int(recl/np.dtype('float32').itemsize)
 			#Now we read the field
@@ -1170,11 +1152,11 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 	for L in range(nwk):
 		wk=L+1
 		#Read grads binary file size H, W  --it assumes that 2AFC file exists (template for final domain size)
-		with open('../output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk'+str(wk)+'.ctl', "r") as fp:
+		with open('./output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk'+str(wk)+'.ctl', "r") as fp:
 			for line in lines_that_contain("XDEF", fp):
 				W = int(line.split()[1])
 				XD= float(line.split()[4])
-		with open('../output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk'+str(wk)+'.ctl', "r") as fp:
+		with open('./output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk'+str(wk)+'.ctl', "r") as fp:
 			for line in lines_that_contain("YDEF", fp):
 				H = int(line.split()[1])
 				YD= float(line.split()[4])
@@ -1191,7 +1173,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 			facecolor='none')
 
 
-		f=open('../output/'+model+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
+		f=open('./output/'+model+'_'+fprefix+'_'+score+'_'+training_season+'_'+mon+str(fday)+'_wk'+str(wk)+'.dat','rb')
 
 		tit=['Below Normal','Normal','Above Normal']
 		for i in range(3):
@@ -1258,11 +1240,11 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 	nmods=len(models)
 	tar=tgts[mons.index(monf)]
 	#Read grads binary file size H, W  --it assumes all files have the same size, and that 2AFC exists
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("XDEF", fp):
 			W = int(line.split()[1])
 			XD= float(line.split()[4])
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("YDEF", fp):
 			H = int(line.split()[1])
 			YD= float(line.split()[4])
@@ -1273,7 +1255,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 	for model in models:
 		k=k+1
 		#Read grads binary file size H, W  --it assumes all files have the same size, and that 2AFC exists
-		f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		recl=struct.unpack('i',f.read(4))[0]
 		numval=int(recl/np.dtype('float32').itemsize)
 		#Now we read the field
@@ -1282,7 +1264,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		muf[muf==-999.]=np.nan #only sensible values
 
 		#Read variance
-		f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		recl=struct.unpack('i',f.read(4))[0]
 		numval=int(recl/np.dtype('float32').itemsize)
 		#Now we read the field
@@ -1362,15 +1344,15 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 	dof=ntrain
 	tar=tgts[mons.index(monf)]
 	#Read grads binary file size H, W  --it assumes all files have the same size, and that 2AFC exists
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("XDEF", fp):
 			W = int(line.split()[1])
 			XD= float(line.split()[4])
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("YDEF", fp):
 			H = int(line.split()[1])
 			YD= float(line.split()[4])
-	with open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
+	with open('./output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'.ctl', "r") as fp:
 		for line in lines_that_contain("TDEF", fp):
 			T = int(line.split()[1])
 			TD= 1  #not used
@@ -1391,7 +1373,7 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 		#Forecast files--------
 		#Read mean
 		#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-		f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		recl=struct.unpack('i',f.read(4))[0]
 		numval=int(recl/np.dtype('float32').itemsize)
 		#Now we read the field
@@ -1401,7 +1383,7 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 		muf=muf[i,j]
 
 		#Read variance
-		f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		recl=struct.unpack('i',f.read(4))[0]
 		numval=int(recl/np.dtype('float32').itemsize)
 		#Now we read the field
@@ -1415,7 +1397,7 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 		#
 		muc0=np.empty([T,H,W])  #define array for later use
 		#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-		f=open('../output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('./output/'+models[0]+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 		for it in range(T):
 			#Now we read the field
@@ -1499,40 +1481,12 @@ def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,
 	#cbar.set_label(label) #, rotation=270)
 	f.close()
 
-"""
-#angel version
-def GetHindcasts(tini, tend, wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, nmonths, tar, model, force_download):
-	if not force_download:
-		try:
-			ff=open(model+"_PRCP_"+tar+"_ini"+mon+".tsv", 'r')
-			s = ff.readline()
-		except OSError as err:
-			print("\033[1mWarning:\033[0;0m {0}".format(err))
-			print("Hindcasts file doesn't exist --\033[1mSOLVING: downloading file\033[0;0m")
-			force_download = True
-	if force_download:
-		#dictionary:
-		dic = { 'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'CMC2-CanCM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC2-CanCM4/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'COLA-RSMAS-CCSM4': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.COLA-RSMAS-CCSM4/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p5-FLOR-A06': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-A06/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-				'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20'+mon+'%20'+str(tini)+'-'+str(tend)+'%29/VALUES/L/'+tgti+'/'+tgtf+'/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/'+str(sla1)+'/'+str(nla1)+'/RANGEEDGES/X/'+str(wlo1)+'/'+str(elo1)+'/RANGEEDGES/'+str(30*nmonths)+'/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-		}
-		# calls curl to download data
-		url=dic[model]
-		print("\n Hindcasts URL: \n\n "+url)
-		get_ipython().system("curl -k "+url+" > "+model+"_PRCP_"+tar+"_ini"+mon+".tsv")
 
-"""
 #kyle version
 def GetHindcasts( tini, tend, wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, nmonths, tar, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"_PRCP_"+tar+"_ini"+mon+".tsv", 'r')
+			ff=open('./input/' + model+"_PRCP_"+tar+"_ini"+mon+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1563,13 +1517,13 @@ def GetHindcasts( tini, tend, wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, nmont
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"_PRCP_"+tar+"_ini"+mon+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"_PRCP_"+tar+"_ini"+mon+".tsv")
 
 
 def GetHindcasts_RFREQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, wetday_threshold, tar, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"_RFREQ_"+tar+"_ini"+mon+".tsv", 'r')
+			ff=open('./input/' + model+"_RFREQ_"+tar+"_ini"+mon+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1600,12 +1554,12 @@ def GetHindcasts_RFREQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, wetday_thres
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"_RFREQ_"+tar+"_ini"+mon+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"_RFREQ_"+tar+"_ini"+mon+".tsv")
 
 def GetHindcasts_UQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"_UQ_"+tar+"_ini"+mon+".tsv", 'r')
+			ff=open('./input/' + model+"_UQ_"+tar+"_ini"+mon+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1628,13 +1582,13 @@ def GetHindcasts_UQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"_UQ_"+tar+"_ini"+mon+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"_UQ_"+tar+"_ini"+mon+".tsv")
 
 
 def GetHindcasts_VQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"_VQ_"+tar+"_ini"+mon+".tsv", 'r')
+			ff=open('./input/' + model+"_VQ_"+tar+"_ini"+mon+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1657,12 +1611,12 @@ def GetHindcasts_VQ(wlo1, elo1, sla1, nla1, tgti, tgtf, mon, os, tar, model, for
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"_VQ_"+tar+"_ini"+mon+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"_VQ_"+tar+"_ini"+mon+".tsv")
 
 def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, force_download,station, nmonths):
 	if not force_download:
 		try:
-			ff=open("obs_"+predictand+"_"+tar+".tsv", 'r')
+			ff=open('./input/' + "obs_"+predictand+"_"+tar+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1687,7 +1641,7 @@ def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, forc
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > obs_"+predictand+"_"+tar+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/obs_"+predictand+"_"+tar+".tsv")
 
 
 		if obs_source=='home/.xchourio/.ACToday/.CHL/.prcp':   #weirdly enough, Ingrid sends the file with nfields=0. This is my solution for now. AGM
@@ -1697,7 +1651,7 @@ def GetObs(predictand, wlo2, elo2, sla2, nla2, tar, obs_source, hdate_last, forc
 def GetObs_RFREQ(predictand, wlo2, elo2, sla2, nla2, wetday_threshold, threshold_pctle, tar, obs_source, hdate_last, force_download,station):
 	if not force_download:
 		try:
-			ff=open("obs_"+predictand+"_"+tar+".tsv", 'r')
+			ff=open('./input/' + "obs_"+predictand+"_"+tar+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1723,12 +1677,12 @@ def GetObs_RFREQ(predictand, wlo2, elo2, sla2, nla2, wetday_threshold, threshold
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > obs_"+predictand+"_"+tar+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/obs_"+predictand+"_"+tar+".tsv")
 
 def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, nmonths, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
+			ff=open('./input/' + model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1759,12 +1713,12 @@ def GetForecast(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, nmonths, mod
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"fcst_PRCP_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"fcst_UQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
+			ff=open('./input/' + model+"fcst_UQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1786,12 +1740,12 @@ def GetForecast_UQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, fo
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"fcst_UQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"fcst_UQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_VQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"fcst_VQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
+			ff=open('./input/' + model+"fcst_VQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1813,12 +1767,12 @@ def GetForecast_VQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, model, fo
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"fcst_VQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"fcst_VQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
 
 def GetForecast_RFREQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, wetday_threshold, model, force_download):
 	if not force_download:
 		try:
-			ff=open(model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
+			ff=open('./input/' + model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv", 'r')
 			s = ff.readline()
 		except OSError as err:
 			print("\033[1mWarning:\033[0;0m {0}".format(err))
@@ -1847,7 +1801,42 @@ def GetForecast_RFREQ(monf, fyr, tgti, tgtf, tar, wlo1, elo1, sla1, nla1, wetday
 		#    c.setopt(c.WRITEDATA, f)
 		#    c.perform()
 		#    c.close()
-		get_ipython().system("curl -k "+url+" > "+model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
+		get_ipython().system("curl -k "+url+" > ./input/"+model+"fcst_RFREQ_"+tar+"_ini"+monf+str(fyr)+".tsv")
+
+def setup_directories(workdir,working_directory, force_download, cptdir):
+	os.chdir(working_directory)
+
+	if force_download and os.path.isdir(workdir):
+		if platform.system() == 'Windows':
+			print('Windows deleting folders')
+			get_ipython().system('del /S /Q {}/{}'.format(workdir))
+			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/scripts'))
+			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/input'))
+			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/output'))
+			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/images'))
+			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir))
+
+		else:
+			print('Mac deleting folders')
+			get_ipython().system('rm -rf {}'.format(workdir))
+
+	if not os.path.isdir(workdir):
+		get_ipython().system('mkdir {}'.format(workdir))
+
+	if not os.path.isdir(workdir + '/scripts'):
+		get_ipython().system('mkdir {}/scripts'.format(workdir))
+
+	if not os.path.isdir(workdir + '/images'):
+		get_ipython().system('mkdir {}/images'.format(workdir))
+
+	if not os.path.isdir(workdir + '/input'):
+		get_ipython().system('mkdir {}/input'.format(workdir))
+
+	if not os.path.isdir(workdir + '/output'):
+		get_ipython().system('mkdir {}/output'.format(workdir))
+
+	os.environ["CPT_BIN_DIR"] = cptdir
+	os.chdir(workdir)
 
 
 def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,elo2,fprefix,mpref,tar,ntrain,MOS,station, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, tini, tend):
@@ -1855,7 +1844,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 
 		"""
 		# Set up CPT parameter file
-		f=open("params","w")
+		f=open("./scripts/params","w")
 		if MOS=='CCA':
 			# Opens CCA
 			f.write("611\n")
@@ -1877,7 +1866,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 
 		# Opens X input file
 		f.write("1\n")
-		file='../input/'+model+'_'+fprefix+'_'+tar+'_ini'+mon+'.tsv\n'
+		file='./input/'+model+'_'+fprefix+'_'+tar+'_ini'+mon+'.tsv\n'
 		f.write(file)
 		# Nothernmost latitude
 		f.write(str(nla1)+'\n')
@@ -1896,7 +1885,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 
 			# Opens forecast (X) file
 			f.write("3\n")
-			file='../input/'+model+'fcst_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.tsv\n'
+			file='./input/'+model+'fcst_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.tsv\n'
 			f.write(file)
 			#Start forecast:
 			f.write("223\n")
@@ -1907,7 +1896,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 
 		# Opens Y input file
 		f.write("2\n")
-		file='../input/obs_'+predictand+'_'+tar+'.tsv\n'
+		file='./input/obs_'+predictand+'_'+tar+'.tsv\n'
 		f.write(file)
 		if station==False:
 			# Nothernmost latitude
@@ -1932,11 +1921,17 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		# X training period
 		f.write("4\n")
 		# First year of X training period
-		f.write("{}\n".format(tini))
+		if monf in ['Dec', 'Nov']:
+			f.write("{}\n".format(tini+1))
+		else:
+			f.write("{}\n".format(tini))
 		# Y training period
 		f.write("5\n")
 		# First year of Y training period
-		f.write("{}\n".format(tini))
+		if monf in ['Dec', 'Nov']:
+			f.write("{}\n".format(tini+1))
+		else:
+			f.write("{}\n".format(tini))
 
 
 		# Goodness index
@@ -2006,7 +2001,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 
 		# save goodness index
 		f.write("112\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Kendallstau_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Kendallstau_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# Build cross-validated model
@@ -2017,7 +2012,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write("111\n")
 			#X EOF
 			f.write("302\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tar+'_'+mon+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFX_'+tar+'_'+mon+'\n'
 			f.write(file)
 			#Exit submenu
 			f.write("0\n")
@@ -2025,7 +2020,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write("111\n")
 			#Y EOF
 			f.write("312\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tar+'_'+mon+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_EOFY_'+tar+'_'+mon+'\n'
 			f.write(file)
 			#Exit submenu
 			f.write("0\n")
@@ -2034,42 +2029,42 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write("413\n")
 		# save Pearson's Correlation
 		f.write("1\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Pearson_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Pearson_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# cross-validated skill maps
 		f.write("413\n")
 		# save Spearmans Correlation
 		f.write("2\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Spearman_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Spearman_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# cross-validated skill maps
 		f.write("413\n")
 		# save 2AFC score
 		f.write("3\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_2AFC_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# cross-validated skill maps
 		f.write("413\n")
 		# save RocBelow score
 		f.write("15\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RocBelow_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RocBelow_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# cross-validated skill maps
 		f.write("413\n")
 		# save RocAbove score
 		f.write("16\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RocAbove_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RocAbove_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# cross-validated skill maps
 		f.write("413\n")
 		# save RocAbove score
 		f.write("7\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RMSE_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RMSE_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 
@@ -2082,7 +2077,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write("111\n")
 			# Forecast probabilities
 			f.write("501\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_P_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_P_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			#502 # Forecast odds
 			#Exit submenu
@@ -2094,7 +2089,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write("111\n")
 			# Forecast values
 			f.write("511\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_V_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_V_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			#502 # Forecast odds
 
@@ -2102,23 +2097,23 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			#######Following files are used to plot the flexible format
 			# Save cross-validated predictions
 			f.write("201\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_xvPr_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_xvPr_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save deterministic forecasts [mu for Gaussian fcst pdf]
 			f.write("511\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save prediction error variance [sigma^2 for Gaussian fcst pdf]
 			f.write("514\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save z
 			f.write("532\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_z_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_z_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save predictand [to build predictand pdf]
 			f.write("102\n")
-			file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 
 			#Exit submenu
@@ -2132,27 +2127,27 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write("111\n")
 			# Save cross-validated predictions
 			f.write("201\n")
-			file='../output/'+model+'_'+fprefix+'_'+mpref+'FCST_xvPr_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+'_'+mpref+'FCST_xvPr_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save deterministic forecasts [mu for Gaussian fcst pdf]
 			f.write("511\n")
-			file='../output/'+model+'_'+fprefix+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Forecast probabilities
 			f.write("501\n")
-			file='../output/'+model+'_'+fprefix+'_'+mpref+'FCST_P_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+'_'+mpref+'FCST_P_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save prediction error variance [sigma^2 for Gaussian fcst pdf]
 			f.write("514\n")
-			file='../output/'+model+'_'+fprefix+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save z
 			f.write("532\n")
-			file='../output/'+model+'_'+fprefix+'_'+mpref+'FCST_z_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+'_'+mpref+'FCST_z_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Save predictand [to build predictand pdf]
 			f.write("102\n")
-			file='../output/'+model+'_'+fprefix+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+'_'+mpref+'FCST_Obs_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 
 			# cross-validated skill maps
@@ -2163,7 +2158,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 			f.write("413\n")
 			# save 2AFC score
 			f.write("3\n")
-			file='../output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+tar+'_'+monf+str(fyr)+'\n'
+			file='./output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+tar+'_'+monf+str(fyr)+'\n'
 			f.write(file)
 			# Stop saving  (not needed in newest version of CPT)
 
@@ -2172,7 +2167,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		#Re-define forecas file if PCR or CCA
 		if MOS=="PCR" or MOS=="CCA" : #kjch092120
 			f.write("3\n")
-			file='../input/'+model+'_'+fprefix+'_'+tar+'_ini'+mon+'.tsv\n'  #here a conditional should choose if rainfall freq is being used
+			file='./input/'+model+'_'+fprefix+'_'+tar+'_ini'+mon+'.tsv\n'  #here a conditional should choose if rainfall freq is being used
 			f.write(file)
 		#Forecast period settings
 		f.write("6\n")
@@ -2198,7 +2193,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write("111\n")
 		# Forecast probabilities --Note change in name for reforecasts:
 		f.write("501\n")
-		file='../output/'+model+'_RFCST_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'\n'
+		file='./output/'+model+'_RFCST_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'\n'
 		f.write(file)
 		#502 # Forecast odds
 		#Exit submenu
@@ -2211,7 +2206,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write("621\n")
 		# Opens X input file
 		f.write("1\n")
-		file='../output/'+model+'_RFCST_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.txt\n'
+		file='./output/'+model+'_RFCST_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.txt\n'
 		f.write(file)
 		# Nothernmost latitude
 		f.write(str(nla2)+'\n')
@@ -2258,7 +2253,7 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		#Reliability diagram
 		f.write("431\n")
 		f.write("Y\n") #yes, save results to a file
-		file='../output/'+model+'_RFCST_reliabdiag_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.tsv\n'
+		file='./output/'+model+'_RFCST_reliabdiag_'+fprefix+'_'+tar+'_ini'+monf+str(fyr)+'.tsv\n'
 		f.write(file)
 
 		# select output format -- GrADS, so we can plot it in Python
@@ -2270,21 +2265,21 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write("437\n")
 		# save Ignorance (all cats)
 		f.write("101\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Ignorance_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_Ignorance_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# Probabilistic skill maps
 		f.write("437\n")
 		# save Ranked Probability Skill Score (all cats)
 		f.write("122\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RPSS_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_RPSS_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 		# Probabilistic skill maps
 		f.write("437\n")
 		# save Ranked Probability Skill Score (all cats)
 		f.write("131\n")
-		file='../output/'+model+'_'+fprefix+predictand+'_'+mpref+'_GROC_'+tar+'_'+mon+'\n'
+		file='./output/'+model+'_'+fprefix+predictand+'_'+mpref+'_GROC_'+tar+'_'+mon+'\n'
 		f.write(file)
 
 
@@ -2293,9 +2288,9 @@ def CPTscript(model,predictand, mon,monf,fyr,nla1,sla1,wlo1,elo1,nla2,sla2,wlo2,
 		f.write("0\n")
 		f.close()
 		if platform.system() == 'Windows':
-			get_ipython().system("copy params "+model+"_"+fprefix+"_"+mpref+"_"+tar+"_"+mon+".cpt")
+			get_ipython().system("copy ./scripts/params "+model+"_"+fprefix+"_"+mpref+"_"+tar+"_"+mon+".cpt")
 		else:
-			get_ipython().system("cp params "+model+"_"+fprefix+"_"+mpref+"_"+tar+"_"+mon+".cpt")
+			get_ipython().system("cp ./scripts/params "+model+"_"+fprefix+"_"+mpref+"_"+tar+"_"+mon+".cpt")
 
 
 def ensemblefiles(models,work):
@@ -2306,33 +2301,33 @@ def ensemblefiles(models,work):
 		models: array with selected models
 	"""
 	if platform.system() == 'Windows':
-		get_ipython().system("cd ../output")
-		print('cd ../output')
-		get_ipython().system("mkdir NextGen")
+		get_ipython().system("cd ./output")
+		print('cd ./output')
+		get_ipython().system("mkdir ./output/NextGen")
 		print('made NextGen')
-#		get_ipython().system("mkdir ../output/NextGen/")
+#		get_ipython().system("mkdir ./output/NextGen/")
 	else:
-		get_ipython().system("mkdir ../output/NextGen/") #this is fine
+		get_ipython().system("mkdir ./output/NextGen/") #this is fine
 	#Go to folder and delate old TXT and TGZ files in folder
 	if platform.system() == 'Windows':
-		get_ipython().system("del /s /q ./NextGen/*_NextGen.tgz")
-		print('del /s /q *_NextGen.tgz')
-		get_ipython().system("del /s /q ./NextGen/*.txt")
+		get_ipython().system("del /s /q ./output/NextGen/*_NextGen.tgz")
+		print('del /s /q ./output/*_NextGen.tgz')
+		get_ipython().system("del /s /q ./output/NextGen/*.txt")
 		print('del /s /q *.txt')
 	else:
-		get_ipython().system("cd ../output/NextGen/; rm -Rf *_NextGen.tgz *.txt")
+		get_ipython().system("cd ./output/NextGen/; rm -Rf *_NextGen.tgz *.txt")
 
 	for i in range(len(models)):
 		if platform.system() == 'Windows':
-			get_ipython().system("cd ..")
-			print('cd ..')
-			get_ipython().system("copy *"+models[i]+"*.txt NextGen")
-			print('copy *' + models[i] + "*.txt ./NextGen/")
+			get_ipython().system("cd .")
+			print('cd .')
+			get_ipython().system("copy ./output/*"+models[i]+"*.txt NextGen")
+			print('copy ./output/*' + models[i] + "*.txt ./NextGen/")
 		else:
-			get_ipython().system("cp ../*"+models[i]+"*.txt .")
+			get_ipython().system("cp ./output/*"+models[i]+"*.txt .")
 
-	get_ipython().system("tar cvzf NextGen/"+work+"_NextGen.tgz *.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
-	print("tar cvzf NextGen/"+work+"_NextGen.tgz *.txt")
+	get_ipython().system("tar cvzf ./output/NextGen/"+work+"_NextGen.tgz *.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
+	print("tar cvzf ./output/NextGen/"+work+"_NextGen.tgz *.txt")
 	if platform.system() == 'Windows':
 		get_ipython().system("echo %cd%")
 	else:
@@ -2341,6 +2336,22 @@ def ensemblefiles(models,work):
 	print("Compressed file "+work+"_NextGen.tgz created in output/NextGen/")
 	print("Now send that file to your contact at the IRI")
 
+def RunCPT(cptdir, model, tar, mon):
+	print('Executing CPT for '+model+' and initialization '+mon+'...')
+	try:
+		if platform.system() == "Windows":
+			subprocess.check_output([ cptdir+'CPT.x', '<', './scripts/params', '>', './scripts/CPT_stout_train_'+model+'_'+tar+'_'+mon+'.txt'] , shell=True)
+		else:
+			subprocess.check_output(cptdir+'CPT.x < ./scripts/params > ./scripts/CPT_stout_train_'+model+'_'+tar+'_'+mon+'.txt',stderr=subprocess.STDOUT, shell=True)
+	except subprocess.CalledProcessError as e:
+		print(e.output.decode())
+		raise
+	print('----------------------------------------------')
+	print('Calculations for '+mon+' initialization completed!')
+	print('See output folder, and check scripts/CPT_stout_train_'+model+'_'+tar+'_'+mon+'.txt for errors')
+	print('----------------------------------------------')
+	print('----------------------------------------------\n\n\n')
+
 def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 	"""A simple function for computing the NextGen ensemble
 
@@ -2348,6 +2359,7 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 	----------
 		models: array with selected models
 	"""
+
 	nmods=len(models)
 
 	W, Wi, XD, H, Hi, YD, T, Ti, TD = readGrADSctl(models,fprefix,predictand,mpref,id,tar,monf,fyr)
@@ -2356,11 +2368,13 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 
 	k=-1
 	for model in models:
+		print('Preparing CPT files for '+model+' and initialization '+mon+'...')
+
 		k=k+1 #model
 		memb0=np.empty([T,H,W])  #define array for later use
 
 		#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
-		f=open('../output/'+model+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.dat','rb')
+		f=open('./output/'+model+'_'+fprefix+predictand+'_'+mpref+id+'_'+tar+'_'+monf+str(fyr)+'.dat','rb')
 		#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 		for it in range(T):
 			#Now we read the field
@@ -2378,15 +2392,15 @@ def NGensemble(models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr):
 	NG=np.nanmean(ens, axis=0)  #axis 0 is ensemble member
 
 	#Now write output:
-	#writeCPT(NG,'../output/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+	#writeCPT(NG,'./output/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
 	if id=='FCST_xvPr':
-		writeCPT(NG,'../input/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+		writeCPT(NG,'./input/NextGen_'+fprefix+'_'+tar+'_ini'+mon+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
 		print('Cross-validated prediction files successfully produced')
 	if id=='FCST_mu':
-		writeCPT(NG,'../output/NextGen_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+		writeCPT(NG,'./output/NextGen_'+fprefix+predictand+'_'+mpref+'FCST_mu_'+tar+'_'+monf+str(fyr)+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
 		print('Forecast files successfully produced')
 	if id=='FCST_var':
-		writeCPT(NG,'../output/NextGen_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
+		writeCPT(NG,'./output/NextGen_'+fprefix+predictand+'_'+mpref+'FCST_var_'+tar+'_'+monf+str(fyr)+'.tsv',models,fprefix,predictand,mpref,id,tar,mon,tgti,tgtf,monf,fyr)
 		print('Forecast error files successfully produced')
 
 
