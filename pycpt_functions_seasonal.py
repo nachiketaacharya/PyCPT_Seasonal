@@ -32,15 +32,15 @@ warnings.filterwarnings("ignore")
 
 #Supporting class for custom pyplot/matplotlib colormaps
 class MidpointNormalize(colors.Normalize):
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-        self.midpoint = midpoint
-        colors.Normalize.__init__(self, vmin, vmax, clip)
+	def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+		self.midpoint = midpoint
+		colors.Normalize.__init__(self, vmin, vmax, clip)
 
-    def __call__(self, value, clip=None):
-        # Ignoring masked values and all kinds of edge cases to make a
-        # simple example..
-        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-        return np.ma.masked_array(np.interp(value, x, y))
+	def __call__(self, value, clip=None):
+		# Ignoring masked values and all kinds of edge cases to make a
+		# simple example..
+		x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+		return np.ma.masked_array(np.interp(value, x, y))
 
 #class for handling the absurd number of parameters for running PyCPT and passing them to various functions
 class PyCPT_Args():
@@ -180,17 +180,20 @@ class PyCPT_Args():
 		if '-' in self.tgts[tar_ndx]:
 			mon_ini, mon_fin = self.tgts[tar_ndx].split('-')
 			self.nmonths, self.ndays, flag = 0, 0, 0
-			for i in months:
+			found_end, count = 0, 0
+			while found_end == 0 and count < 24:
 				if flag == 1:
 					self.nmonths += 1
-					self.ndays += days_in_month_dict[i]
-					if i == mon_fin:
-						flag = 0
+					self.ndays += days_in_month_dict[months[count % 12]]
+					if months[count % 12] == mon_fin:
+						flag, found_end = 0, 1
 
-				if i == mon_ini:
+				if months[count % 12] == mon_ini:
 					flag = 1
 					self.nmonths += 1
-					self.ndays += days_in_month_dict[i]
+					self.ndays += days_in_month_dict[months[count % 12]]
+				count += 1
+
 		else:
 			mon_ini = self.tgts[tar_ndx]
 			self.nmonths, self.ndays, self.flag = 0, 0, 0
@@ -350,7 +353,6 @@ class PyCPT_Args():
 
 		#set the model to the current focus
 		self.arg_dict['model'] = self.models[model_ndx],
-
 		found=-1
 		if datatype=='Obs':
 			if os.path.isfile(self.localobs[tar_ndx]):
@@ -402,7 +404,7 @@ class PyCPT_Args():
 						fpre = 'PRCP'
 					get_ipython().system("curl -k "+url.format(**self.arg_dict)+" > ./input/obs_"+fpre+"_"+self.tgts[tar_ndx]+".tsv")
 				else:
-					get_ipython().system("curl -k "+url.format(**self.arg_dict)+" > ./input/"+self.models[model_ndx]+"fcst_PRCP_"+self.tgts[tar_ndx]+"_ini"+self.monf[tar_ndx]+str(self.fyr)+".tsv")
+					get_ipython().system("curl -k "+url.format(**self.arg_dict)+" > ./input/"+self.models[model_ndx]+"fcst_{}_".format(self.fprefix)+self.tgts[tar_ndx]+"_ini"+self.monf[tar_ndx]+str(self.fyr)+".tsv")
 
 		if self.obs_source=='home/.xchourio/.ACToday/.CHL/.prcp':   #weirdly enough, Ingrid sends the file with nfields=0. This is my solution for now. AGM
 			replaceAll("obs_"+predictand+"_"+tar+".tsv","cpt:nfields=0","cpt:nfields=1")
@@ -1001,9 +1003,11 @@ class PyCPT_Args():
 		#fig = plt.figure(figsize=(20,40))
 		#ax = [ plt.subplot2grid((nmods+1, nsea), (int(np.floor(nd / nsea)), int(nd % nsea)),rowspan=1, colspan=1, projection=ccrs.PlateCarree()) for nd in range(nmods*nsea) ]
 		#ax.append(plt.subplot2grid((nmods+1, nsea), (nmods, 0), colspan=nsea ) )
-		if nsea == 1:
-			ax = [ax]
-		if nmods == 1:
+		if nsea==1 and nmods == 1:
+			ax = [[ax]]
+		elif nsea == 1:
+			ax = [[ax[q]] for q in range(nmods)]
+		elif nmods == 1:
 			ax = [ax]
 		if self.met[score_ndx] not in ['Pearson','Spearman']:
 			#urrent_cmap = plt.cm.get_cmap('RdYlBu', 10 )
@@ -1252,9 +1256,11 @@ class PyCPT_Args():
 		#plt.figure(figsize=(20,10))
 		#fig, ax = plt.subplots(figsize=(20,15),sharex=True,sharey=True)
 		fig, ax = plt.subplots(nrows=nmods, ncols=nsea, sharex=False,sharey=False, figsize=(10*nsea,6*nmods), subplot_kw={'projection': ccrs.PlateCarree()})
-		if nsea == 1:
-			ax = [ax]
-		if nmods == 1:
+		if nsea==1 and nmods == 1:
+			ax = [[ax]]
+		elif nsea == 1:
+			ax = [[ax[q]] for q in range(nmods)]
+		elif nmods == 1:
 			ax = [ax]
 
 		#current_cmap = plt.cm.get_cmap('RdYlBu', 14)
@@ -1323,9 +1329,8 @@ class PyCPT_Args():
 					else:
 						ax[i][j].text(-0.42, 0.5, self.models[i-1],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
 
-				if i == 0:
+				if i == 0: #kjch101620
 					ax[i][j].set_title(self.tgts[j])
-
 				#Since CPT writes grads files in sequential format, we need to excise the 4 bytes between records (recl)
 				if i ==0:
 					tari=self.tgts[j]
@@ -1363,8 +1368,7 @@ class PyCPT_Args():
 						label = 'EOF charges'
 					else:
 						mon=self.mons[j]
-						f=open('./output/'+model+'_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'_EOFX_'+self.mons[j]+'_'+mon+'.dat','rb')
-
+						f=open('./output/'+model+'_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'_EOFX_'+self.tgts[j]+'_'+mon+'.dat','rb')
 						#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 						for mo in range(M):
 							#Now we read the field
@@ -1384,7 +1388,6 @@ class PyCPT_Args():
 				else:
 					mon=self.mons[j]
 					f=open('./output/'+self.models[i-1]+'_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'_EOFX_'+self.tgts[j]+'_'+mon+'.dat','rb')
-
 					#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 					for mo in range(M):
 						#Now we read the field
@@ -1424,12 +1427,12 @@ class PyCPT_Args():
 				#cbar.set_label(label) #, rotation=270)
 				#axins.yaxis.tick_left()
 				f.close()
-				model_names = ['obs']
-				model_names.extend(self.models)
+		model_names = ['obs']
+		model_names.extend(self.models)
 		if self.models[1] == 'NextGen':
-			fig.savefig('./images/EOF{}_NextGen_{}.png'.format(mode+1,  self.tgts[j]), dpi=500, bbox_inches='tight')
+			fig.savefig('./images/EOF{}_NextGen.png'.format(mode+1, dpi=500, bbox_inches='tight')
 		else:
-			fig.savefig('./images/EOF{}_Models_{}.png'.format(mode+1,  self.tgts[j]), dpi=500, bbox_inches='tight')
+			fig.savefig('./images/EOF{}_Models.png'.format(mode+1, dpi=500, bbox_inches='tight')
 				#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 				#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 				#plt.tight_layout()
