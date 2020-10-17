@@ -282,6 +282,133 @@ class PyCPT_Args():
 		self.getData( tar_ndx, model_ndx, 'Obs')
 		self.getData( tar_ndx, model_ndx, 'Forecasts')
 
+	def cutOutLocalData(self, tar_ndx):
+
+		with open(self.localobs[tar_ndx], 'r') as fp:
+			counter = 0
+			data = []
+			years = 0
+			flag = 0
+
+			for line in fp:
+				if counter == 0:
+					header = line
+				if counter == 1:
+					nfields = line
+				else:
+					if line[0] == 'c' or line[0] == 'x':
+						years += 1
+						if flag==2:
+							lats, lons = [], []
+							data.append(np.asarray(year_data))
+							year_data = []
+							flag = 1
+						else:
+							lats, lons = [], []
+							flag = 1
+							year_data = []
+					elif flag == 1:
+						flag = 2
+						lons = [float(num) for num in line.strip().split('\t')]
+					else:
+						line = [float(num) for num in line.strip().split('\t') ]
+						lats.append(line.pop(0))
+						year_data.append(np.asarray(line))
+				counter += 1
+			data.append(np.asarray(year_data))
+			data = np.asarray(data)
+			lats, lons = np.asarray(lats), np.asarray(lons)
+			print(data.shape)
+			print(lats.shape)
+			print(lons.shape)
+
+
+
+
+		var = data
+		vari = 'prec'
+		varname = vari
+		units = 'mm'
+		var[np.isnan(var)]=-999. #use CPT missing value
+		tar = self.tgts[tar_ndx]
+		L=0.5*(float(self.tgtf[tar_ndx])+float(self.tgti[tar_ndx]))
+		monthdic = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06','Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12'}
+		S=monthdic[self.mons[tar_ndx]]
+		if '-' in tar:
+			mi=monthdic[tar.split("-")[0]]
+			mf=monthdic[tar.split("-")[1]]
+
+			#Read grads file to get needed coordinate arrays
+			#W, Wi, XD, H, Hi, YD, T, Ti, TD = self.readGrADSctl(self.models,self.fprefix,self.PREDICTAND,self.mpref,self.file,tar,self.monf[tar_ndx],self.fyr)
+
+			if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
+				xyear=True  #flag a cross-year season
+			else:
+				#Ti=Ti+1
+				xyear=False
+		else:
+			mi=monthdic[tar]
+			mf=monthdic[tar]
+
+			#Read grads file to get needed coordinate arrays
+			#W, Wi, XD, H, Hi, YD, T, Ti, TD = self.readGrADSctl(self.models,self.fprefix,self.PREDICTAND,self.mpref,self.file,tar,self.monf[tar_ndx],self.fyr)
+
+			if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
+				xyear=True  #flag a cross-year season
+			else:
+				#Ti=Ti+1
+				xyear=False
+
+		latkeys = np.where(lats <= self.nla2  )
+		latkeys = np.asarray(np.where(lats[latkeys] >= self.sla2))#.reshape(-1,1)
+
+		lonkeys = np.asarray(np.where(lons <= self.elo2 ))
+		lonkeys = np.asarray(np.where(lons[lonkeys] >= self.wlo2))#.reshape(-1,1)
+
+		data = data[:,latkeys[0,0]:latkeys[0,latkeys.shape[1]-1], lonkeys[0,0]:lonkeys[0,lonkeys.shape[1]-1]]
+		lats = lats[latkeys]
+		lons = lons[lonkeys]
+
+		Ti = self.tini
+		T = data.shape[0]
+		Tarr = np.arange(Ti, T+Ti)
+
+		Wi = lons[0,0]
+		W = lons.shape[0]
+		XD = lons[0,1] - lons[0,0]
+
+		Hi = lats[0,0]
+		H = lats.shape[0]
+		YD = lats[0,1] - lats[0,0]
+
+		Xarr = np.linspace(Wi, Wi+W*XD,num=W+1)
+		Yarr = np.linspace(Hi+H*YD, Hi,num=H+1)
+		vari = 'prcp'
+
+		Tarr = np.arange(Ti, Ti+T)
+		Xarr = np.linspace(Wi, Wi+W*XD,num=W+1)
+		Yarr = np.linspace(Hi+H*YD, Hi,num=H+1)
+		outfile = './input/{}_{}_{}.tsv'.format('obs', self.PREDICTAND, self.tgts[tar_ndx])
+		#Now write the CPT file
+		f = open(outfile, 'w')
+		f.write("xmlns:cpt=http://iri.columbia.edu/CPT/v10/\n")
+		#f.write("xmlns:cf=http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.4/\n")   #not really needed
+		f.write("cpt:nfields=1\n")
+		#f.write("cpt:T	" + str(Tarr)+"\n")  #not really needed
+		for it in range(T):
+			if xyear==True:
+				f.write("cpt:field="+vari+", cpt:L="+str(L)+" months, cpt:S="+str(Ti)+"-"+S+"-01T00:00, cpt:T="+str(Tarr[it])+"-"+mi+"/"+str(Tarr[it]+1)+"-"+mf+", cpt:nrow="+str(H)+", cpt:ncol="+str(W)+", cpt:row=Y, cpt:col=X, cpt:units="+units+", cpt:missing=-999.\n")
+			else:
+				f.write("cpt:field="+vari+", cpt:L="+str(L)+" months, cpt:S="+str(Ti)+"-"+S+"-01T00:00, cpt:T="+str(Tarr[it])+"-"+mi+"/"+mf+", cpt:nrow="+str(H)+", cpt:ncol="+str(W)+", cpt:row=Y, cpt:col=X, cpt:units="+units+", cpt:missing=-999.\n")
+			#f.write("\t")
+			np.savetxt(f, Xarr[0:-1], fmt="%.3f",newline='\t') #f.write(str(Xarr)[1:-1])
+			f.write("\n") #next line
+			for iy in range(H):
+				#f.write(str(Yarr[iy]) + "\t" + str(var[it,iy,0:-1])[1:-1]) + "\n")
+				np.savetxt(f,np.r_[Yarr[iy+1],var[it,iy,0:]],fmt="%.3f", newline='\t')  #excise extra line
+				f.write("\n") #next line
+		f.close()
+
 	def convertNCDF_CPT(self, tar_ndx):
 		data = ns.Dataset(self.localobs[tar_ndx], 'r') #open .nc file for reading
 		units='mm'
@@ -354,7 +481,7 @@ class PyCPT_Args():
 		#set the model to the current focus
 		self.arg_dict['model'] = self.models[model_ndx],
 		found=-1
-		if datatype=='Obs':
+		if datatype=='Obs' and False: #we are not doing local data at this time
 			if os.path.isfile(self.localobs[tar_ndx]):
 				print('Found Local data - trying to open as netCDF... ')
 				try:
@@ -363,6 +490,7 @@ class PyCPT_Args():
 					found = 1
 				except:
 					print('Could not open as NetCDF - We are trusting that it is correct CPT format')
+					self.cutOutLocalData(tar_ndx)
 					found = 1
 			else:
 				print("No local data by that name,, looking for previously downloaded")
@@ -1430,9 +1558,9 @@ class PyCPT_Args():
 		model_names = ['obs']
 		model_names.extend(self.models)
 		if self.models[1] == 'NextGen':
-			fig.savefig('./images/EOF{}_NextGen.png'.format(mode+1, dpi=500, bbox_inches='tight')
+			fig.savefig('./images/EOF{}_NextGen.png'.format(mode+1, dpi=500, bbox_inches='tight'))
 		else:
-			fig.savefig('./images/EOF{}_Models.png'.format(mode+1, dpi=500, bbox_inches='tight')
+			fig.savefig('./images/EOF{}_Models.png'.format(mode+1, dpi=500, bbox_inches='tight'))
 				#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
 				#cbar_ax = plt.add_axes([0.85, 0.15, 0.05, 0.7])
 				#plt.tight_layout()
@@ -1506,7 +1634,7 @@ class PyCPT_Args():
 	def lines_that_contain(self, string, fp):
 		return [line for line in fp if string in line]
 
-	def writeCPT(self, tar_ndx, var,outfile):
+	def writeCPT(self, tar_ndx, var, outfile):
 		"""Function to write seasonal output in CPT format,
 		using information contained in a GrADS ctl file.
 
