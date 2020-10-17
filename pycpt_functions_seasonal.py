@@ -44,9 +44,11 @@ class MidpointNormalize(colors.Normalize):
 
 #class for handling the absurd number of parameters for running PyCPT and passing them to various functions
 class PyCPT_Args():
-	def __init__(self, cptdir, models, met, obs, station, MOS, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, nmodes, PREDICTAND, PREDICTOR, mons, tgti, tgtf, tgts, tini, tend, monf, fyr, force_download, nla1, sla1, wlo1, elo1, nla2, sla2, wlo2, elo2, localobs, lonkey, latkey, timekey, datakey, shp_file, use_default):
+	def __init__(self,  working_directory, workdir, cptdir, models, met, obs, station, MOS, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, nmodes, PREDICTAND, PREDICTOR, mons, tgti, tgtf, tgts, tini, tend, monf, fyr, force_download, nla1, sla1, wlo1, elo1, nla2, sla2, wlo2, elo2, localobs, lonkey, latkey, timekey, datakey, shp_file, use_default):
 		#These are the variables set by the user
 		self.models = models
+		self.working_directory = working_directory
+		self.workdir = workdir
 		self.shp_file = shp_file
 		self.use_default = use_default
 		self.met = met
@@ -480,7 +482,7 @@ class PyCPT_Args():
 
 		#set the model to the current focus
 		self.arg_dict['model'] = self.models[model_ndx],
-		found=-1
+		found=0
 		if datatype=='Obs' and False: #we are not doing local data at this time
 			if os.path.isfile(self.localobs[tar_ndx]):
 				print('Found Local data - trying to open as netCDF... ')
@@ -530,6 +532,7 @@ class PyCPT_Args():
 						fpre = 'RFREQ'
 					else:
 						fpre = 'PRCP'
+					print("curl -k "+url.format(**self.arg_dict)+" > ./input/obs_"+fpre+"_"+self.tgts[tar_ndx]+".tsv")
 					get_ipython().system("curl -k "+url.format(**self.arg_dict)+" > ./input/obs_"+fpre+"_"+self.tgts[tar_ndx]+".tsv")
 				else:
 					get_ipython().system("curl -k "+url.format(**self.arg_dict)+" > ./input/"+self.models[model_ndx]+"fcst_{}_".format(self.fprefix)+self.tgts[tar_ndx]+"_ini"+self.monf[tar_ndx]+str(self.fyr)+".tsv")
@@ -997,7 +1000,10 @@ class PyCPT_Args():
 		f.write("0\n")
 		f.close()
 		if platform.system() == 'Windows':
-			get_ipython().system("copy ./scripts/params ./scripts/"+self.models[model_ndx]+"_"+self.fprefix+"_"+self.mpref+"_"+self.tgts[tar_ndx]+"_"+self.mons[tar_ndx]+".cpt")
+			os.chdir('scripts')
+			get_ipython().system("copy params "+self.models[model_ndx]+"_"+self.fprefix+"_"+self.mpref+"_"+self.tgts[tar_ndx]+"_"+self.mons[tar_ndx]+".cpt")
+			os.chdir(self.working_directory)
+			os.chdir(self.workdir)
 		else:
 			get_ipython().system("cp ./scripts/params ./scripts/"+self.models[model_ndx]+"_"+self.fprefix+"_"+self.mpref+"_"+self.tgts[tar_ndx]+"_"+self.mons[tar_ndx]+".cpt")
 
@@ -2134,12 +2140,14 @@ def setup_directories(workdir,working_directory, force_download, cptdir):
 	if force_download and os.path.isdir(workdir):
 		if platform.system() == 'Windows':
 			print('Windows deleting folders')
-			get_ipython().system('del /S /Q {}/{}'.format(workdir))
-			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/scripts'))
-			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/input'))
-			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/output'))
-			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir + '/images'))
-			get_ipython().system('rmdir /S /Q {}/{}'.format(workdir))
+			get_ipython().system('del /S /Q {} > op.txt'.format(workdir))
+			os.chdir(workdir)
+			get_ipython().system('rmdir /S /Q {} > op.txt'.format('scripts'))
+			get_ipython().system('rmdir /S /Q {} > op.txt'.format( 'input'))
+			get_ipython().system('rmdir /S /Q {} > op.txt'.format('output'))
+			get_ipython().system('rmdir /S /Q {} > op.txt'.format( 'images'))
+			os.chdir(working_directory)
+			get_ipython().system('rmdir /S /Q {} > op.txt'.format(workdir))
 
 		else:
 			print('Mac deleting folders')
@@ -2148,20 +2156,21 @@ def setup_directories(workdir,working_directory, force_download, cptdir):
 	if not os.path.isdir(workdir):
 		get_ipython().system('mkdir {}'.format(workdir))
 
+	os.chdir(workdir)
+
 	if not os.path.isdir(workdir + '/scripts'):
-		get_ipython().system('mkdir {}/scripts'.format(workdir))
+		get_ipython().system('mkdir scripts'.format(workdir))
 
 	if not os.path.isdir(workdir + '/images'):
-		get_ipython().system('mkdir {}/images'.format(workdir))
+		get_ipython().system('mkdir images')
 
 	if not os.path.isdir(workdir + '/input'):
-		get_ipython().system('mkdir {}/input'.format(workdir))
+		get_ipython().system('mkdir input')
 
 	if not os.path.isdir(workdir + '/output'):
-		get_ipython().system('mkdir {}/output'.format(workdir))
+		get_ipython().system('mkdir output')
 
 	os.environ["CPT_BIN_DIR"] = cptdir
-	os.chdir(workdir)
 
 
 
