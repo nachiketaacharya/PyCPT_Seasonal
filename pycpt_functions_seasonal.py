@@ -26,7 +26,7 @@ import subprocess
 import numpy as np
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-import netCDF4 as ns
+#import netCDF4 as ns
 
 warnings.filterwarnings("ignore")
 
@@ -44,10 +44,11 @@ class MidpointNormalize(colors.Normalize):
 
 #class for handling the absurd number of parameters for running PyCPT and passing them to various functions
 class PyCPT_Args():
-	def __init__(self, cptdir, models, met, obs, station, MOS, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, nmodes, PREDICTAND, PREDICTOR, mons, tgti, tgtf, tgts, tini, tend, monf, fyr, force_download, nla1, sla1, wlo1, elo1, nla2, sla2, wlo2, elo2, shp_file, use_default, localobs="None", lonkey="None", latkey="None", timekey="None", datakey="None"):
+	def __init__(self, cptdir, models, met, obs, station, MOS, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, nmodes, PREDICTAND, PREDICTOR, mons, tgti, tgtf, tgts, tini, tend, monf, fyr, force_download, nla1, sla1, wlo1, elo1, nla2, sla2, wlo2, elo2, shp_file='shp_file', use_default='True', localobs="None", lonkey="None", latkey="None", timekey="None", datakey="None"):
 		#These are the variables set by the user
 		self.models = models
 		self.shp_file = shp_file
+		print(self.shp_file)
 		self.use_default = use_default
 		self.met = met
 		self.obs = obs
@@ -421,7 +422,7 @@ class PyCPT_Args():
 		f.close()
 
 	def convertNCDF_CPT(self, tar_ndx):
-		data = ns.Dataset(self.localobs[tar_ndx], 'r') #open .nc file for reading
+		#data = ns.Dataset(self.localobs[tar_ndx], 'r') #open .nc file for reading
 		units='mm'
 		L=0.5*(float(self.tgtf[tar_ndx])+float(self.tgti[tar_ndx]))
 
@@ -1055,10 +1056,10 @@ class PyCPT_Args():
 		"""
 
 
-		try:
-			self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		except:
-			print('Failed to load custom shape file')
+		#try:
+		#self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+		#except:
+		#	print('Failed to load custom shape file')
 		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 		states_provinces = feature.NaturalEarthFeature(
 			category='cultural',
@@ -1089,10 +1090,10 @@ class PyCPT_Args():
 			ax.add_feature(feature.LAND)
 			#ax.add_feature(feature.COASTLINE)
 			ax.add_feature(feature.OCEAN)
-			try:
-				ax.add_feature(self.shape_feature, edgecolor='black')
-			except:
-				pass
+			#try:
+			#ax.add_feature(self.shape_feature, edgecolor='black')
+			#except:
+			#	pass
 			ax.set_title(title[i]+" domain")
 			pl=ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 					  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
@@ -1124,10 +1125,10 @@ class PyCPT_Args():
 		if isNextGen != -1:
 			self.models = ['NextGen']
 
-		try:
-			shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		except:
-			print('Failed to load custom shape file')
+		#try:
+		#	shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+		#except:
+		#	print('Failed to load custom shape file')
 
 		nmods=len(self.models)
 		nsea=len(self.mons)
@@ -1199,10 +1200,10 @@ class PyCPT_Args():
 				pl.xlabels_bottom = True
 				pl.xformatter = LONGITUDE_FORMATTER
 				pl.yformatter = LATITUDE_FORMATTER
-				try:
-					ax[i][j].add_feature(self.shape_feature, edgecolor='black')
-				except:
-					print('failed to add your shape file')
+				#try:
+				#	ax[i][j].add_feature(self.shape_feature, edgecolor='black')
+				#except:
+				#	print('failed to add your shape file')
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
 				ax[i][j].set_ybound(lower=self.sla2, upper=self.nla2)
@@ -1353,10 +1354,10 @@ class PyCPT_Args():
 
 			---plot observations - check angel version
 		"""
-		try:
-			shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		except:
-			print('Failed to load custom shape file')
+		#try:
+		#	shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+		#except:
+		#	print('Failed to load custom shape file')
 
 		M = self.eof_modes
 		#mol=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -1369,6 +1370,8 @@ class PyCPT_Args():
 		tari=self.tgts[0]
 		model=self.models[0]
 		monn=self.mons[0]
+
+		data = [[[[] for k in range(M)] for j in range(nsea)] for i in range(nmods)]
 
 		with open('./output/'+model+'_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'_EOFX_'+tari+'_'+monn+'.ctl', "r") as fp:
 			for line in self.lines_that_contain("XDEF", fp):
@@ -1448,10 +1451,10 @@ class PyCPT_Args():
 				pl.xlabels_bottom = True
 				pl.xformatter = LONGITUDE_FORMATTER
 				pl.yformatter = LATITUDE_FORMATTER
-				try:
-					ax[i][j].add_feature(self.shape_feature, edgecolor='black')
-				except:
-					print('failed to load your shapefile')
+				#try:
+				#	ax[i][j].add_feature(self.shape_feature, edgecolor='black')
+				#except:
+			#		print('failed to load your shapefile')
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
 				if self.obs == 'ENACTS-BD' and i ==0:
@@ -1489,17 +1492,19 @@ class PyCPT_Args():
 							numval=int(recl/np.dtype('float32').itemsize) #this if for each time/EOF stamp
 							A0=np.fromfile(f,dtype='float32',count=numval)
 							endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
-							eofy[mo,:,:]= np.transpose(A0.reshape((Wy, Hy), order='F'))
+							A0[A0==-999.] = np.nan
+							data[i][j][mo]= np.transpose(A0.reshape((Wy, Hy), order='F'))
 						eofy[eofy==-999.]=np.nan #nans
 
+
 						if self.obs == 'ENACTS-BD':
-							CS=ax[i][j].pcolormesh(np.linspace(87.6, 93.0,num=Wy), np.linspace(27.1, 20.4, num=Hy), eofy[mode,:,:],
+							CS=ax[i][j].pcolormesh(np.linspace(87.6, 93.0,num=Wy), np.linspace(27.1, 20.4, num=Hy), data[i][j][mode],
 							vmin=-.1,vmax=.1,
 							cmap=current_cmap,
 							transform=ccrs.PlateCarree())
 						else:
 						#CS=ax[i][j].pcolormesh(np.linspace(loni, loni+Wy*XDy,num=Wy), np.linspace(lati+Hy*YDy, lati, num=Hy), eofy[mode,:,:],
-							CS=ax[i][j].pcolormesh(np.linspace(self.wlo1, self.elo1,num=Wy), np.linspace(self.nla1, self.sla1, num=Hy), eofy[mode,:,:],
+							CS=ax[i][j].pcolormesh(np.linspace(self.wlo1, self.elo1,num=Wy), np.linspace(self.nla1, self.sla1, num=Hy), data[i][j][mode],
 							vmin=-.1,vmax=.1,
 							cmap=current_cmap,
 							transform=ccrs.PlateCarree())
@@ -1515,10 +1520,12 @@ class PyCPT_Args():
 							numval=int(recl/np.dtype('float32').itemsize) #this if for each time/EOF stamp
 							A0=np.fromfile(f,dtype='float32',count=numval)
 							endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
+							A0[A0==-999.]=np.nan
+							data[i][j][mo] = np.transpose(A0.reshape((W, H), order='F'))
 							eofx[mo,:,:]= np.transpose(A0.reshape((W, H), order='F'))
 
 						eofx[eofx==-999.]=np.nan #nans
-						CS=ax[i][j].pcolormesh(np.linspace(self.wlo1, self.wlo1+W*XD,num=W), np.linspace(self.sla1+H*YD, self.sla1, num=H), eofx[mode,:,:],
+						CS=ax[i][j].pcolormesh(np.linspace(self.wlo1, self.wlo1+W*XD,num=W), np.linspace(self.sla1+H*YD, self.sla1, num=H), data[i][j][mode],
 						vmin=-.105, vmax=.105,
 						cmap=current_cmap,
 						transform=ccrs.PlateCarree())
@@ -1534,10 +1541,12 @@ class PyCPT_Args():
 						numval=int(recl/np.dtype('float32').itemsize) #this if for each time/EOF stamp
 						A0=np.fromfile(f,dtype='float32',count=numval)
 						endrec=struct.unpack('i',f.read(4))[0]  #needed as Fortran sequential repeats the header at the end of the record!!!
+						A0[A0==-999.]=np.nan
+						data[i][j][mo] = np.transpose(A0.reshape((W, H), order='F'))
 						eofx[mo,:,:]= np.transpose(A0.reshape((W, H), order='F'))
 
 					eofx[eofx==-999.]=np.nan #nans
-					CS=ax[i][j].pcolormesh(np.linspace(self.wlo1, self.wlo1+W*XD,num=W), np.linspace(self.sla1+H*YD, self.sla1, num=H), eofx[mode,:,:],
+					CS=ax[i][j].pcolormesh(np.linspace(self.wlo1, self.wlo1+W*XD,num=W), np.linspace(self.sla1+H*YD, self.sla1, num=H), data[i][j][mode],
 					vmin=-.105, vmax=.105,
 					cmap=current_cmap,
 					transform=ccrs.PlateCarree())
@@ -1771,7 +1780,7 @@ class PyCPT_Args():
 			late: northern latitude
 		"""
 		try:
-			shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
 		except:
 			print('Failed to load custom shape file')
 
@@ -1994,7 +2003,7 @@ class PyCPT_Args():
 		if platform.system() == 'Windows':
 			get_ipython().system("tar cvzf " + os.path.normpath("output/NextGen/"+work+"_NextGen.tgz") + " " + os.path.normpath("output/NextGen/*.txt")) #this ~should~ be fine ? unless they have a computer older than last march 2019
 		else:
-			get_ipython().system("tar cvzf ./output/NextGen/"+work+"_NextGen.tgz *.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
+			get_ipython().system("tar cvzf ./output/NextGen/"+work+"_NextGen.tgz ./output/NextGen/*.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
 
 
 		if platform.system() == 'Windows':
@@ -2017,7 +2026,7 @@ class PyCPT_Args():
 			late: northern latitude
 		"""
 		try:
-			shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
 		except:
 			print('Failed to load custom shape file')
 		self._tempmods = copy.deepcopy(self.models)
@@ -2075,6 +2084,7 @@ class PyCPT_Args():
 					ax[i][j].add_feature(self.shape_feature, edgecolor='black')
 				except:
 					print('failed to load your shapefile')
+
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
 
