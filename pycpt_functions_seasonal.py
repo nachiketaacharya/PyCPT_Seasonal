@@ -48,7 +48,6 @@ class PyCPT_Args():
 		#These are the variables set by the user
 		self.models = models
 		self.shp_file = shp_file
-		print(self.shp_file)
 		self.use_default = use_default
 		self.met = met
 		self.obs = obs
@@ -87,7 +86,6 @@ class PyCPT_Args():
 		self.timekey = timekey
 		self.datakey = datakey
 		self.L = ['1']
-
 		#Following are to be updated during 'setup_params'
 		self.ndays = 0
 		self.nmonths = 0
@@ -115,7 +113,6 @@ class PyCPT_Args():
 			'elo2': self.elo2,
 			'fyr': self.fyr
 		}
-
 		self.url_dict = {
 		  'Hindcasts': {
 		    'PRCP': {	'CanSIPSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CanSIPSv2/.HINDCAST/.MONTHLY/.prec/SOURCES/.Models/.NMME/.CanSIPSv2/.FORECAST/.MONTHLY/.prec/appendstream/S/%280000%201%20{mon}%20{tini}-{tend}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{nmonths30}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -137,8 +134,8 @@ class PyCPT_Args():
 						'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20{mon}%201982-2009%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{ndays}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 						'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20{mon}%201982-2009%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{ndays}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 						'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20{mon}%201982-2009%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{ndays}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-						'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20{mon}%201982-2009%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{ndays}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-						'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20{mon}%201982-2009%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{ndays}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'}},
+						'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20{mon}%201982-2009%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{ndays}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
+		},
 		  'Obs': {
 		    'RFREQ': {
 		        True: 'https://iridl.ldeo.columbia.edu/{obs_source}/Y/{sla2}/{nla2}/RANGE/X/{wlo2}/{elo2}/RANGE/T/(days%20since%201960-01-01)/streamgridunitconvert/T/(1%20Jan%201982)/(31%20Dec%202010)/RANGEEDGES/%5BT%5Dpercentileover/{wetday_threshold}/flagle/T/{ndays}/runningAverage/{ndays}/mul/T/2/index/.T/SAMPLE/nip/dup/T/npts//I/exch/NewIntegerGRID/replaceGRID/dup/I/5/splitstreamgrid/%5BI2%5Daverage/sub/I/3/-1/roll/.T/replaceGRID/-999/setmissing_value/grid%3A//name/(T)/def//units/(months%20since%201960-01-01)/def//standard_name/(time)/def//pointwidth/1/def/16/Jan/1901/ensotime/12./16/Jan/3001/ensotime/%3Agrid/use_as_grid//name/(fp)/def//units/(unitless)/def//long_name/(rainfall_freq)/def/-999/setmissing_value/%5BX/Y%5D%5BT%5Dcptv10.tsv.gz',
@@ -161,8 +158,7 @@ class PyCPT_Args():
 						'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{nmonths30}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 						'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{nmonths30}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 						'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.FORECAST/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{nmonths30}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-						'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.FORECAST/.EARLY_MONTH_SAMPLES/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{nmonths30}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-						'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{nmonths30}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
+						'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.FORECAST/.EARLY_MONTH_SAMPLES/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/{nmonths30}/mul/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
 		    'UQ': {'NCEP-CFSv2': 'http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.VGRD/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.SPFH/mul/P/850/VALUE/S/%281%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
 		    'VQ': {'NCEP-CFSv2': 'http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.VGRD/SOURCES/.NOAA/.NCEP/.EMC/.CFSv2/.REALTIME_ENSEMBLE/.PGBF/.pressure_level/.SPFH/mul/P/850/VALUE/S/%281%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
 		    'RFREQ': {	'CMC1-CanCM3': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.CMC1-CanCM3/.FORECAST/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
@@ -172,13 +168,12 @@ class PyCPT_Args():
 						'GFDL-CM2p5-FLOR-B01': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p5-FLOR-B01/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 						'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
 						'NASA-GEOSS2S': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NASA-GEOSS2S/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-						'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv',
-						'GFDL-CM2p1-aer04': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.GFDL-CM2p1-aer04/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
+						'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
 		  }
 		}
 
-	def setupParams(self,tar_ndx):
-		"""PyCPT setup"""
+
+	def setupParams(self, tar_ndx):
 		#global rainfall_frequency,threshold_pctle,wetday_threshold,obs_source,hdate_last,mpref,L,ntrain,fprefix, nmonths, ndays
 		days_in_month_dict = {"Jan": 31, "Feb": 28, "Mar": 31, "Apr": 30, "May": 31, "Jun": 30, "Jul": 31, "Aug": 31, "Sep": 30, "Oct": 31, "Nov": 30, "Dec": 31}
 		months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -288,7 +283,7 @@ class PyCPT_Args():
 		local_obs_datakey = 'rf'             #ncdf key for accessing data itself
 
 	def prepFiles(self, tar_ndx, model_ndx):
-		"""Function to download (or not) the needed files"""
+		x= "Function to download (or not) the needed files"
 		print('Preparing CPT files for '+self.models[model_ndx]+' and initialization '+self.mons[tar_ndx]+'...')
 		self.getData( tar_ndx, model_ndx, 'Hindcasts')
 		self.getData( tar_ndx, model_ndx, 'Obs')
@@ -486,12 +481,8 @@ class PyCPT_Args():
 		f.close()
 
 	def getData(self,  tar_ndx, model_ndx, datatype):
-		"""tar_ndx = index of the target period we are looking at within the list
-		   model_ndx = index of model were looking at within the list
-		   datatype = one of 'Obs', 'Hindcasts', or 'Forecasts'    """
-
 		#set the model to the current focus
-		self.arg_dict['model'] = self.models[model_ndx],
+		self.arg_dict['model'] = self.models[model_ndx]
 		found=0
 		if datatype=='Obs' and False: #we are not doing local data at this time
 			if os.path.isfile(self.localobs[tar_ndx]):
@@ -553,8 +544,6 @@ class PyCPT_Args():
 		print('----------------------------------------------')
 
 	def CPTscript(self, tar_ndx, model_ndx=-1):
-		"""Function to write CPT namelist file
-		"""
 		flag=0
 		if model_ndx == -1:
 			self._tempmods = copy.deepcopy(self.models)
@@ -790,7 +779,7 @@ class PyCPT_Args():
 
 
 
-		if self.MOS=='CCA' or self.MOS=='PCR' or self.MOS=="None" :  #kjch092120 #DO NOT USE CPT to compute probabilities if MOS='None' --use IRIDL for direct counting
+		if self.MOS=='CCA' or self.MOS=='PCR' or self.MOS=='None':  #kjch092120 #DO NOT USE CPT to compute probabilities if MOS='None' --use IRIDL for direct counting
 			#######FORECAST(S)	!!!!!
 			# Probabilistic (3 categories) maps
 			f.write("455\n")
@@ -872,7 +861,7 @@ class PyCPT_Args():
 			f.write(file)
 
 			# cross-validated skill maps
-			if self.MOS=="PCR" or self.MOS=="CCA" : #kjch092120
+			if self.MOS=="PCR" or self.MOS=="CCA" or self.MOS=="None": #kjch092120
 				f.write("0\n")
 
 			# cross-validated skill maps
@@ -886,7 +875,7 @@ class PyCPT_Args():
 		###########PFV --Added by AGM in version 1.5
 		#Compute and write retrospective forecasts for prob skill assessment.
 		#Re-define forecas file if PCR or CCA
-		if self.MOS=="PCR" or self.MOS=="CCA" : #kjch092120
+		if self.MOS=="PCR" or self.MOS=="CCA" or self.MOS=="None" : #kjch092120
 			f.write("3\n")
 			file='./input/'+self.models[model_ndx]+'_'+self.fprefix+'_'+self.tgts[tar_ndx]+'_ini'+self.mons[tar_ndx]+'.tsv\n'  #here a conditional should choose if rainfall freq is being used
 			f.write(file)
@@ -1044,18 +1033,6 @@ class PyCPT_Args():
 			self.models = self._tempmods
 
 	def pltdomain(self):
-		"""A simple plot function for the geographical domain
-
-		PARAMETERS
-		----------
-			loni: western longitude
-			lone: eastern longitude
-			lati: southern latitude
-			late: northern latitude
-			title: title
-		"""
-
-
 		#try:
 		#self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
 		#except:
@@ -1112,16 +1089,7 @@ class PyCPT_Args():
 		plt.show()
 
 	def pltmap(self, score_ndx, isNextGen=-1):
-		"""A simple function for ploting the statistical scores
 
-		PARAMETERS
-		----------
-			score: the score - this is one of ['Pearson','Spearman','2AFC','RocAbove','RocBelow']
-			loni: western longitude
-			lone: eastern longitude
-			lati: southern latitude
-			late: northern latitude
-		"""
 		if isNextGen != -1:
 			self.models = ['NextGen']
 
@@ -1337,23 +1305,7 @@ class PyCPT_Args():
 		plt.show()
 
 	def plteofs(self, mode):
-		"""A simple function for ploting EOFs computed by CPT
 
-		PARAMETERS
-		----------
-			models: list of models to plot
-			predictand: exactly that
-			mode: EOF being visualized
-			M: total number of EOFs computed by CPT (max defined in PyCPT is 10)
-			loni: western longitude
-			lone: eastern longitude
-			lati: southern latitude
-			late: northern latitude
-			fprefix:
-
-
-			---plot observations - check angel version
-		"""
 		#try:
 		#	shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
 		#except:
@@ -1361,11 +1313,14 @@ class PyCPT_Args():
 
 		M = self.eof_modes
 		#mol=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-		if self.mpref=='None':
+		if self.MOS=='None':
 			print('No EOFs are computed if MOS=None is used')
 			return
 		print('\n\n\n-------------EOF {}-------------\n'.format(mode+1))
-		nmods=len(self.models) + 1 #nmods + obs
+		if self.mpref == 'CCA':
+			nmods=len(self.models) + 1 #nmods + obs
+		else:
+			nmods = len(self.models)
 		nsea=len(self.mons)
 		tari=self.tgts[0]
 		model=self.models[0]
@@ -1392,6 +1347,8 @@ class PyCPT_Args():
 					Hy = int(line.split()[1])
 					YDy= float(line.split()[4])
 			eofy=np.empty([M,Hy,Wy])  #define array for later use
+			datay = [[[[] for k in range(M)] for j in range(nsea)] for i in range(nmods)]
+
 
 		eofx=np.empty([M,H,W])  #define array for later use
 
@@ -1414,10 +1371,12 @@ class PyCPT_Args():
 			for j in range(nsea):
 
 				tari=self.tgts[j]
-				if i == 0:
+				if i == 0 and self.mpref=='CCA':
 					model = self.models[0]
-				else:
+				elif self.mpref=='CCA' and i > 0:
 					model=self.models[i-1]
+				else:
+					model = self.models[i]
 
 
 
@@ -1457,19 +1416,31 @@ class PyCPT_Args():
 			#		print('failed to load your shapefile')
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
-				if self.obs == 'ENACTS-BD' and i ==0:
-					ax[i][j].set_ybound(lower=20.5, upper=27)
-					ax[i][j].set_xbound(lower=87.5, upper=93)
+
+
+				if self.mpref == 'CCA':
+					if self.obs == 'ENACTS-BD' and i ==0:
+						ax[i][j].set_ybound(lower=20.5, upper=27)
+						ax[i][j].set_xbound(lower=87.5, upper=93)
+					elif self.obs != 'ENACTS-BD' and i == 0:
+						ax[i][j].set_ybound(lower=self.sla2, upper=self.nla2)
+						ax[i][j].set_xbound(lower=self.wlo2, upper=self.elo2)
+					else:
+						ax[i][j].set_ybound(lower=self.sla1, upper=self.nla1)
+						ax[i][j].set_xbound(lower=self.wlo1, upper=self.elo1)
 				else:
 					ax[i][j].set_ybound(lower=self.sla1, upper=self.nla1)
 					ax[i][j].set_xbound(lower=self.wlo1, upper=self.elo1)
 
 
 				if j == 0:
-					if i == 0:
+					if i == 0 and self.mpref == 'CCA':
 						ax[i][j].text(-0.42, 0.5, 'Obs',rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
-					else:
+					elif i > 0 and self.mpref == 'CCA':
 						ax[i][j].text(-0.42, 0.5, self.models[i-1],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
+					else:
+						ax[i][j].text(-0.42, 0.5, self.models[i],rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
+
 
 				if i == 0: #kjch101620
 					ax[i][j].set_title(self.tgts[j])
@@ -1533,7 +1504,11 @@ class PyCPT_Args():
 
 				else:
 					mon=self.mons[j]
-					f=open('./output/'+self.models[i-1]+'_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'_EOFX_'+self.tgts[j]+'_'+mon+'.dat','rb')
+					if self.mpref == 'CCA':
+						f=open('./output/'+self.models[i-1]+'_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'_EOFX_'+self.tgts[j]+'_'+mon+'.dat','rb')
+					else:
+						f=open('./output/'+self.models[i]+'_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'_EOFX_'+self.tgts[j]+'_'+mon+'.dat','rb')
+
 					#cycle for all time steps  (same approach to read GrADS files as before, but now read T times)
 					for mo in range(M):
 						#Now we read the field
@@ -1577,7 +1552,7 @@ class PyCPT_Args():
 				f.close()
 		model_names = ['obs']
 		model_names.extend(self.models)
-		if self.models[1] == 'NextGen':
+		if self.models[0] == 'NextGen':
 			fig.savefig('./images/EOF{}_NextGen.png'.format(mode+1, dpi=500, bbox_inches='tight'))
 		else:
 			fig.savefig('./images/EOF{}_Models.png'.format(mode+1, dpi=500, bbox_inches='tight'))
@@ -1593,6 +1568,13 @@ class PyCPT_Args():
 	def setNextGenModels(self, models):
 		self.original_models = self.models
 		self.models = models
+		self.original_MOS = self.MOS
+		self.MOS = "None"
+
+	def restoreModels(self):
+		self.models = self.original_models
+		self.MOS = self.original_MOS
+
 
 	def make_cmap_blue(self,x):
 		colors = [(244, 255,255),
@@ -1655,13 +1637,6 @@ class PyCPT_Args():
 		return [line for line in fp if string in line]
 
 	def writeCPT(self, tar_ndx, var, outfile):
-		"""Function to write seasonal output in CPT format,
-		using information contained in a GrADS ctl file.
-
-		PARAMETERS
-		----------
-			var: a Dataframe with dimensions T,Y,X
-		"""
 		vari = 'prec'
 		varname = vari
 		units = 'mm'
@@ -1709,21 +1684,16 @@ class PyCPT_Args():
 			else:
 				f.write("cpt:field="+vari+", cpt:L="+str(L)+" months, cpt:S="+str(Ti)+"-"+S+"-01T00:00, cpt:T="+str(Tarr[it])+"-"+mi+"/"+mf+", cpt:nrow="+str(H)+", cpt:ncol="+str(W)+", cpt:row=Y, cpt:col=X, cpt:units="+units+", cpt:missing=-999.\n")
 			#f.write("\t")
-			np.savetxt(f, Xarr[0:-1], fmt="%.3f",newline='\t') #f.write(str(Xarr)[1:-1])
+			np.savetxt(f, Xarr[0:-1], fmt="%.6f",newline='\t') #f.write(str(Xarr)[1:-1])
 			f.write("\n") #next line
 			for iy in range(H):
 				#f.write(str(Yarr[iy]) + "\t" + str(var[it,iy,0:-1])[1:-1]) + "\n")
-				np.savetxt(f,np.r_[Yarr[iy+1],var[it,iy,0:]],fmt="%.3f", newline='\t')  #excise extra line
+				np.savetxt(f,np.r_[Yarr[iy+1],var[it,iy,0:]],fmt="%.6f", newline='\t')  #excise extra line
 				f.write("\n") #next line
 		f.close()
 
 	def NGensemble(self, tar_ndx):
-		"""A simple function for computing the NextGen ensemble
 
-		PARAMETERS
-		----------
-			models: array with selected models
-		"""
 
 		nmods=len(self.models)
 
@@ -1769,16 +1739,7 @@ class PyCPT_Args():
 			print('Forecast error files successfully produced')
 
 	def plt_ng_probabilistic(self):
-		"""A simple function for ploting the statistical scores
 
-		PARAMETERS
-		----------
-			fcst_type: either 'deterministic' or 'probabilistic'
-			loni: western longitude
-			lone: eastern longitude
-			lati: southern latitude
-			late: northern latitude
-		"""
 		try:
 			self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
 		except:
@@ -1977,54 +1938,33 @@ class PyCPT_Args():
 		return lats, longs, all_vals
 
 	def ensemblefiles(self,models,work):
-		"""A simple function for preparing the NextGen ensemble files for the DL
-		lion brand yarn
-		PARAMETERS
-		----------
-			models: array with selected models
-		"""
+
 		if platform.system() == 'Windows':
 			get_ipython().system("mkdir ./output/NextGen")
-		else:
-			get_ipython().system("mkdir ./output/NextGen/") #this is fine
-		#Go to folder and delate old TXT and TGZ files in folder
-		if platform.system() == 'Windows':
 			get_ipython().system("del /s /q ./output/NextGen/*_NextGen.tgz")
 			get_ipython().system("del /s /q ./output/NextGen/*.txt")
-		else:
-			get_ipython().system("cd ./output/NextGen/; rm -Rf *_NextGen.tgz *.txt")
-
-		for i in range(len(models)):
-			if platform.system() == 'Windows':
-				get_ipython().system("copy "+ os.path.normpath("output/*"+models[i]+"*.txt") + " " + os.path.normpath("output/NextGen"))
-			else:
-				get_ipython().system("cp ./output/*"+models[i]+"*.txt ./output/NextGen")
-
-		if platform.system() == 'Windows':
-			get_ipython().system("tar cvzf " + os.path.normpath("output/NextGen/"+work+"_NextGen.tgz") + " " + os.path.normpath("output/NextGen/*.txt")) #this ~should~ be fine ? unless they have a computer older than last march 2019
-		else:
-			get_ipython().system("tar cvzf ./output/NextGen/"+work+"_NextGen.tgz ./output/NextGen/*.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
-
-
-		if platform.system() == 'Windows':
+			for i in range(len(self.models)):
+				get_ipython().system("cd " + os.path.normpath("output/NextGen/") + " && copy "+ os.path.normpath("../*"+self.models[i]+"*.txt") + " .")
+			get_ipython().system("cd " + os.path.normpath("output/NextGen/") + " && copy "+ os.path.normpath("output/*NextGen*.txt") + " " + os.path.normpath("output/NextGen"))
+			get_ipython().system("cd " + os.path.normpath("output/NextGen/") + " && tar cvzf " + work + "_NextGen.tgz *.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
+			get_ipython().system("cd " + os.path.normpath("output/NextGen/") + " && del /s /q *.txt")
 			get_ipython().system("echo %cd%")
+
 		else:
+			get_ipython().system("mkdir ./output/NextGen/") #this is fine
+			get_ipython().system("cd ./output/NextGen/; rm -Rf *_NextGen.tgz *.txt")
+			for i in range(len(self.models)):
+				get_ipython().system("cd ./output/NextGen; cp ../*"+self.models[i]+"*.txt .")
+			get_ipython().system("cd ./output/NextGen; cp ../*NextGen*.txt .")
+			get_ipython().system("cd ./output/NextGen; tar cvzf " + work+"_NextGen.tgz *.txt") #this ~should~ be fine ? unless they have a computer older than last march 2019
+			get_ipython().system("cd ./output/NextGen/; rm -Rf *.txt")
 			get_ipython().system('pwd')
 
 		print("Compressed file "+work+"_NextGen.tgz created in output/NextGen/")
 		print("Now send that file to your contact at the IRI")
 
 	def plt_ng_deterministic(self):
-		"""A simple function for ploting the statistical scores
 
-		PARAMETERS
-		----------
-			fcst_type: either 'deterministic' or 'probabilistic'
-			loni: western longitude
-			lone: eastern longitude
-			lati: southern latitude
-			late: northern latitude
-		"""
 		try:
 			self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
 		except:
@@ -2198,14 +2138,7 @@ def exceedprob(x,dof,lo,sc):
 	return t.sf(x, dof, loc=lo, scale=sc)*100
 
 def skilltab(score,wknam,lon1,lat1,lat2,lon2,loni,lone,lati,late,fprefix,mpref,training_season,mon,fday,nwk):
-	"""A simple function for ploting probabilities of exceedance and PDFs (for a given threshold)
 
-	PARAMETERS
-	----------
-		thrs: the threshold, in the units of the predictand
-		lon: longitude
-		lat: latitude
-	"""
 
 	#Read grads binary file size H, W  --it assumes all files have the same size, and that 2AFC exists
 	with open('./output/'+model+'_'+fprefix+'_'+mpref+'_2AFC_'+training_season+'_wk1.ctl', "r") as fp:
@@ -2247,17 +2180,7 @@ def skilltab(score,wknam,lon1,lat1,lat2,lon2,loni,lone,lati,late,fprefix,mpref,t
 	f.close()
 
 def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk):
-	"""A simple function for ploting probabilistic forecasts
 
-	PARAMETERS
-	----------
-		score: the score
-		loni: western longitude
-		lone: eastern longitude
-		lati: southern latitude
-		late: northern latitude
-		title: title
-	"""
 	#Need this score to be defined by the calibration method!!!
 	score = 'CCAFCST_P'
 
@@ -2332,16 +2255,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 	f.close()
 
 def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,monf,fyr,mons,tgts, obs):
-	"""A simple function for ploting probabilistic forecasts in flexible format (for a given threshold)
 
-	PARAMETERS
-	----------
-		thrs: the threshold, in the units of the predictand
-		loni: western longitude
-		lone: eastern longitude
-		lati: southern latitude
-		late: northern latitude
-	"""
 	#Implement: read degrees of freedom from CPT file
 	#Formally, for CCA, dof=ntrain - #CCAmodes -1 ; since ntrain is huge after concat, dof~=ntrain for now
 	if obs == 'ENACTS-BD':
@@ -2445,14 +2359,7 @@ def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,mon
 		f.close()
 
 def pltprobff(models,predictand,thrs,ntrain,lon,lat,loni,lone,lati,late,fprefix,mpref,monf,fyr,mons,tgts):
-	"""A simple function for ploting probabilities of exceedance and PDFs (for a given threshold)
 
-	PARAMETERS
-	----------
-		thrs: the threshold, in the units of the predictand
-		lon: longitude
-		lat: latitude
-	"""
 	#Implement: read degrees of freedom from CPT file
 	#Formally, for CCA, dof=ntrain - #CCAmodes -1 ; since ntrain is huge after concat, dof~=ntrain for now
 	dof=ntrain
