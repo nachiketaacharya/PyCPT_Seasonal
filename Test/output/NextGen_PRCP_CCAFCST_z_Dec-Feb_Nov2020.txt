@@ -1,0 +1,3 @@
+xmlns:cpt=http://iri.columbia.edu/CPT/v10/
+cpt:field=X_CCA_scores, cpt:nrow=1, cpt:ncol=0, cpt:row=T, cpt:col=index
+2018-12/2019-02

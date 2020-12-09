@@ -1044,11 +1044,13 @@ class PyCPT_Args():
 			self.MOS = self._tempmos
 			self.models = self._tempmods
 
-	def pltdomain(self):
-		#try:
-		#self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		#except:
-		#	print('Failed to load custom shape file')
+	def pltdomain(self, use_shp=False):
+		if str(use_shp) == 'True':
+			try:
+				shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			except:
+				print('Failed to load custom shape file')
+				use_shp="False"
 		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
 		print('Training Period: {} - {}'.format(self.tini, self.tend))
 		print('Forecast Initialized: {} {}'.format(self.monf[0], self.fyr))
@@ -1094,6 +1096,8 @@ class PyCPT_Args():
 			pl.yformatter = LATITUDE_FORMATTER
 			if self.use_default == 'True':
 				ax.add_feature(states_provinces, edgecolor='black')
+			if str(use_shp) == 'True':
+				ax.add_feature(shape_feature, edgecolor='black')
 			#states_provinces = cfeature.NaturalEarthFeature(
 	        #category='cultural',
 	        #name='admin_1_states_provinces_lines',
@@ -1105,15 +1109,16 @@ class PyCPT_Args():
 		else:
 			plt.close()
 
-	def pltmap(self, score_ndx, isNextGen=-1):
+	def pltmap(self, score_ndx, isNextGen=-1, use_shp=False):
 
 		if isNextGen != -1:
 			self.models = ['NextGen']
-
-		#try:
-		#	shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		#except:
-		#	print('Failed to load custom shape file')
+		if str(use_shp) == "True":
+			try:
+				shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			except:
+				print('Failed to load custom shape file')
+				use_shp="False"
 
 		nmods=len(self.models)
 		nsea=len(self.mons)
@@ -1136,7 +1141,10 @@ class PyCPT_Args():
 			ax = [ax]
 		if self.met[score_ndx] not in ['Pearson','Spearman']:
 			#urrent_cmap = plt.cm.get_cmap('RdYlBu', 10 )
-			current_cmap = self.make_cmap(10)
+			if self.met[score_ndx] in ['2AFC', 'RPSS', 'GROC', 'RocAbove', 'RocBelow']:
+				current_cmap = self.make_cmap_bright(10)
+			else:
+				current_cmap = self.make_cmap(10)
 		else:
 			#current_cmap = plt.cm.get_cmap('RdYlBu', 14 )
 			current_cmap = self.make_cmap(14)
@@ -1144,6 +1152,13 @@ class PyCPT_Args():
 		#current_cmap.set_under('white', 1.0)
 		print()
 		print(self.met[score_ndx])
+				#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
+		states_provinces = feature.NaturalEarthFeature(
+			category='cultural',
+	#				name='admin_1_states_provinces_shp',
+			name='admin_0_countries',
+			scale='10m',
+			facecolor='none')
 		for i in range(nmods):
 			for j in range(nsea):
 				mon=self.mons[j]
@@ -1165,13 +1180,7 @@ class PyCPT_Args():
 					ax[i][j].set_extent([self.wlo2+x_offset,self.wlo2+W*XD+x_offset,self.sla2+y_offset,self.sla2+H*YD+y_offset], ccrs.PlateCarree())
 				else:
 					ax[i][j].set_extent([self.wlo2+x_offset,self.wlo2+W*XD+x_offset,self.sla2+y_offset,self.sla2+H*YD+y_offset], ccrs.PlateCarree())
-				#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
-				states_provinces = feature.NaturalEarthFeature(
-					category='cultural',
-	#				name='admin_1_states_provinces_shp',
-					name='admin_0_countries',
-					scale='10m',
-					facecolor='none')
+
 
 				ax[i][j].add_feature(feature.LAND)
 				#ax[i][j].add_feature(feature.COASTLINE)
@@ -1191,6 +1200,8 @@ class PyCPT_Args():
 				#	print('failed to add your shape file')
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
+				if str(use_shp) == 'True':
+					ax[i][j].add_feature(shape_feature, edgecolor='black')
 				ax[i][j].set_ybound(lower=self.sla2, upper=self.nla2)
 
 				if j == 0:
@@ -1279,7 +1290,7 @@ class PyCPT_Args():
 					if self.met[score_ndx] == 'RPSS':
 						var[var<-1.]=np.nan #only sensible values
 						CS=ax[i][j].pcolormesh(np.linspace(self.wlo2+x_offset, self.wlo2+W*XD+x_offset,num=W), np.linspace(self.sla2+H*YD+y_offset, self.sla2+y_offset, num=H), var,
-						#vmin=-1,vmax=1,
+						vmin=-4,vmax=4,
 						cmap=current_cmap,
 						transform=ccrs.PlateCarree())
 						label = 'RPSS'
@@ -1287,7 +1298,7 @@ class PyCPT_Args():
 					if self.met[score_ndx] == 'GROC':
 						var[var<-1.]=np.nan #only sensible values
 						CS=ax[i][j].pcolormesh(np.linspace(self.wlo2+x_offset, self.wlo2+W*XD+x_offset,num=W), np.linspace(self.sla2+H*YD+y_offset, self.sla2+y_offset, num=H), var,
-						#vmin=0,vmax=1,
+						vmin=0,vmax=100,
 						cmap=current_cmap,
 						transform=ccrs.PlateCarree())
 						label = 'GROC'
@@ -1306,12 +1317,15 @@ class PyCPT_Args():
 					if self.met[score_ndx] in ['Pearson','Spearman']:
 						 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
 						 cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
-					elif self.met[score_ndx] == '2AFC':
+					elif self.met[score_ndx] in [ '2AFC', 'RocAbove', 'RocBelow', 'GROC']:
 						bounds = [10*gt for gt in range(1,10, 2)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 					elif self.met[score_ndx] == 'RMSE':
 						bounds = [10*gt for gt in range(1,10, 2)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+					elif self.met[score_ndx] == 'RPSS':
+						bounds = [-4,-3,-2,-1,0,1,2,3,4]
+						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 					else:
 						bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
@@ -1329,12 +1343,18 @@ class PyCPT_Args():
 					if self.met[score_ndx] in ['Pearson','Spearman']:
 						 bounds = [-0.9, -0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
 						 cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins,  orientation='vertical', pad=0.02, ticks=bounds)
-					elif self.met[score_ndx] == '2AFC':
-						bounds = [10*gt for gt in range(1,10, 2)]
+					elif self.met[score_ndx] in ['2AFC', 'GROC']:
+						bounds = [10*gt for gt in range(1,10)]
+						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
+					elif self.met[score_ndx] in ['RocAbove', 'RocBelow']:
+						bounds = [0.1*gt for gt in range(1,10)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 					elif self.met[score_ndx] == 'RMSE':
 						bounds = [10*gt for gt in range(1,10, 2)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
+					elif self.met[score_ndx] == 'RPSS':
+						bounds = [-4,-3,-2,-1,0,1,2,3,4]
+						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 					else:
 						bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
@@ -1351,12 +1371,13 @@ class PyCPT_Args():
 		else:
 			plt.close()
 
-	def plteofs(self, mode):
-
-		#try:
-		#	shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		#except:
-		#	print('Failed to load custom shape file')
+	def plteofs(self, mode, use_shp="False"):
+		if str(use_shp) == "True":
+			try:
+				shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			except:
+				print('Failed to load custom shape file')
+				use_shp="False"
 
 		M = self.eof_modes
 		#mol=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -1415,6 +1436,13 @@ class PyCPT_Args():
 		current_cmap = self.make_cmap(14)
 		#current_cmap.set_bad('white',1.0)
 		#current_cmap.set_under('white', 1.0)
+		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
+		states_provinces = feature.NaturalEarthFeature(
+			category='cultural',
+		#				name='admin_1_states_provinces_shp',
+			name='admin_0_countries',
+			scale='10m',
+			facecolor='none')
 
 		for i in range(nmods):
 			for j in range(nsea):
@@ -1437,13 +1465,6 @@ class PyCPT_Args():
 					else:
 						ax[i][j].set_extent([self.wlo1,self.wlo1+Wy*XDy,self.sla1,self.sla1+Hy*YDy], crs=ccrs.PlateCarree())
 
-				#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
-				states_provinces = feature.NaturalEarthFeature(
-					category='cultural',
-	#				name='admin_1_states_provinces_shp',
-					name='admin_0_countries',
-					scale='10m',
-					facecolor='none')
 
 				ax[i][j].add_feature(feature.LAND)
 				#ax[i][j].add_feature(feature.COASTLINE)
@@ -1465,6 +1486,8 @@ class PyCPT_Args():
 			#		print('failed to load your shapefile')
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
+				if use_shp == 'True':
+					ax[i][j].add_feature(shape_feature, edgecolor='black')
 
 
 				if self.mpref == 'CCA':
@@ -1672,6 +1695,26 @@ class PyCPT_Args():
 		colors.reverse()
 		return LinearSegmentedColormap.from_list( "matlab_clone", colors, N=x)
 
+	def make_cmap_bright(self, x):
+		colors = [(238, 43, 51),
+		(255, 57, 67),
+		(253, 123, 91),
+		(248, 175, 123),
+		(254, 214, 158),
+		(252, 239, 188),
+		(252, 252, 152),
+		(187, 252, 255),
+		(244, 255,255),
+		(160, 235, 255),
+		(123, 210, 255),
+		(89, 179, 238),
+		(63, 136, 254),
+		(52, 86, 254)
+		]
+		colors = [ (colors[i][0] / 255.0, colors[i][1] / 255.0, colors[i][2] / 255.0) for i in range(len(colors))]
+		colors.reverse()
+		return LinearSegmentedColormap.from_list( "matlab_clone", colors, N=x)
+
 	def make_cmap_gray(self, x):
 		colors = [(55,55,55),(235,235,235)]
 		colors = [ (colors[i][0] / 255.0, colors[i][1] / 255.0, colors[i][2] / 255.0) for i in range(len(colors))]
@@ -1806,13 +1849,13 @@ class PyCPT_Args():
 			self.writeCPT(tar_ndx, NG,'./output/NextGen_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'FCST_var_'+self.tgts[tar_ndx]+'_'+self.monf[tar_ndx]+str(fyr)+'.tsv')
 			print('Forecast error files successfully produced')
 
-	def plt_ng_probabilistic(self):
-
-		try:
-			self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		except:
-			#print('Failed to load custom shape file')
-			pass
+	def plt_ng_probabilistic(self, use_shp="False"):
+		if str(use_shp) == 'True':
+			try:
+				shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			except:
+				print('Failed to load custom shape file')
+				use_shp = "False"
 
 		self._tempmods = copy.deepcopy(self.models)
 		self.models = ['NextGen']
@@ -1870,6 +1913,14 @@ class PyCPT_Args():
 			ax = [ax]
 		ax = [ax]
 
+		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
+		states_provinces = feature.NaturalEarthFeature(
+			category='cultural',
+#				name='admin_1_states_provinces_shp',
+			name='admin_0_countries',
+			scale='10m',
+			facecolor='none')
+
 		for i in range(xdim):
 			for j in range(nsea):
 				current_cmap = plt.get_cmap('BrBG')
@@ -1883,13 +1934,7 @@ class PyCPT_Args():
 
 				ax[i][j].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
 
-				#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
-				states_provinces = feature.NaturalEarthFeature(
-					category='cultural',
-		#				name='admin_1_states_provinces_shp',
-					name='admin_0_countries',
-					scale='10m',
-					facecolor='none')
+
 
 				ax[i][j].add_feature(feature.LAND)
 				#ax[i][j].add_feature(feature.COASTLINE)
@@ -1904,14 +1949,11 @@ class PyCPT_Args():
 				pl.xformatter = LONGITUDE_FORMATTER
 				pl.yformatter = LATITUDE_FORMATTER
 				pl.xlabel_style = {'size': 8}#'rotation': 'vertical'}
-				try:
-					ax[i][j].add_feature(self.shape_feature, edgecolor='black')
-				except:
-					#print('failed to load your shapefile')
-					pass
+
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
-
+				if str(use_shp)  == 'True':
+					ax[i][j].add_feature(shape_feature, edgecolor='black')
 				ax[i][j].set_ybound(lower=self.sla2, upper=self.nla2)
 				titles = ["Deterministic Forecast", "Probabilistic Forecast (Dominant Tercile)"]
 
@@ -2108,12 +2150,14 @@ class PyCPT_Args():
 		print("Compressed file "+work+"_NextGen.tgz created in output/NextGen/")
 		print("Now send that file to your contact at the IRI")
 
-	def plt_ng_deterministic(self):
+	def plt_ng_deterministic(self, use_shp='False'):
+		if str(use_shp) == "True":
+			try:
+				shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			except:
+				print('failed to load shape file')
+				use_shp = 'False'
 
-		try:
-			self.shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
-		except:
-			pass
 		self._tempmods = copy.deepcopy(self.models)
 		self.models=['NextGen']
 		cbar_loc, fancy = 'bottom', True
@@ -2150,7 +2194,13 @@ class PyCPT_Args():
 		ax = [ax]
 
 
-
+		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
+		states_provinces = feature.NaturalEarthFeature(
+			category='cultural',
+		#				name='admin_1_states_provinces_shp',
+			name='admin_0_countries',
+			scale='10m',
+			facecolor='none')
 
 		for i in range(xdim):
 			for j in range(nsea):
@@ -2161,23 +2211,14 @@ class PyCPT_Args():
 				lats, longs = dlats, dlongs
 				ax[i][j].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
 
-				#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
-				states_provinces = feature.NaturalEarthFeature(
-					category='cultural',
-		#				name='admin_1_states_provinces_shp',
-					name='admin_0_countries',
-					scale='10m',
-					facecolor='none')
 
 				ax[i][j].add_feature(feature.LAND)
 				#ax[i][j].add_feature(feature.COASTLINE)
-				try:
-					ax[i][j].add_feature(self.shape_feature, edgecolor='black')
-				except:
-					pass
 
 				if self.use_default == 'True':
 					ax[i][j].add_feature(states_provinces, edgecolor='black')
+				if str(use_shp) == 'True':
+					ax[i][j].add_feature(shape_feature, edgecolor='black')
 
 				pl=ax[i][j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 					  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
@@ -2189,7 +2230,6 @@ class PyCPT_Args():
 				pl.xlabels_bottom = True
 				pl.xformatter = LONGITUDE_FORMATTER
 				pl.yformatter = LATITUDE_FORMATTER
-				ax[i][j].add_feature(states_provinces, edgecolor='black')
 				ax[i][j].set_ybound(lower=self.sla2, upper=self.nla2)
 				pl.xlabel_style = {'size': 8}#'rotation': 'vertical'}
 
