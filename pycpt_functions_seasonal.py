@@ -1290,7 +1290,7 @@ class PyCPT_Args():
 					if self.met[score_ndx] == 'RPSS':
 						var[var<-1.]=np.nan #only sensible values
 						CS=ax[i][j].pcolormesh(np.linspace(self.wlo2+x_offset, self.wlo2+W*XD+x_offset,num=W), np.linspace(self.sla2+H*YD+y_offset, self.sla2+y_offset, num=H), var,
-						vmin=-4,vmax=4,
+						vmin=-40,vmax=40,
 						cmap=current_cmap,
 						transform=ccrs.PlateCarree())
 						label = 'RPSS'
@@ -1324,7 +1324,7 @@ class PyCPT_Args():
 						bounds = [10*gt for gt in range(1,10, 2)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
 					elif self.met[score_ndx] == 'RPSS':
-						bounds = [-4,-3,-2,-1,0,1,2,3,4]
+						bounds = [-40,-30,-20,-10,0,10,20,30,40]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 					else:
 						bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
@@ -1353,7 +1353,7 @@ class PyCPT_Args():
 						bounds = [10*gt for gt in range(1,10, 2)]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02)#, ticks=bounds)
 					elif self.met[score_ndx] == 'RPSS':
-						bounds = [-4,-3,-2,-1,0,1,2,3,4]
+						bounds = [-40,-30,-20,-10,0,10,20,30,40]
 						cbar = fig.colorbar(CS, ax=ax[i][j], cax=axins, orientation='vertical', pad=0.02, ticks=bounds)
 					else:
 						bounds = [round(0.1*gt,1) for gt in range(1,10, 2)]
