@@ -52,7 +52,7 @@ class PyCPT_Args():
 		else:
 			subprocess.check_output(arg, shell=True)
 
-	def __init__(self, cptdir, models, met, obs, station, MOS, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, nmodes, PREDICTAND, PREDICTOR, mons, tgti, tgtf, tgts, tini, tend, monf, fyr, force_download, nla1, sla1, wlo1, elo1, nla2, sla2, wlo2, elo2, shp_file='shp_file', use_default='True', localobs="None", lonkey="None", latkey="None", timekey="None", datakey="None", showPlot=True):
+	def __init__(self, cptdir, models, met, obs, station, MOS, xmodes_min, xmodes_max, ymodes_min, ymodes_max, ccamodes_min, ccamodes_max, nmodes, PREDICTAND, PREDICTOR, mons, tgti, tgtf, tgts, tini, tend, monf, fyr, force_download, nla1, sla1, wlo1, elo1, nla2, sla2, wlo2, elo2, filetype, shp_file='shp_file', use_default='True', localobs="None", lonkey="None", latkey="None", timekey="None", datakey="None", showPlot=True):
 		#These are the variables set by the user
 		self.showPlot = showPlot
 		self.models = models
@@ -106,6 +106,7 @@ class PyCPT_Args():
 		self.mpref = ''
 		self.ntrain = 0
 		self.fprefix=''
+		self.file=filetype
 
 		#a dictionary to use for dynamic formatting in the 'get data' function with the url dictionary
 		self.arg_dict = {
@@ -182,6 +183,50 @@ class PyCPT_Args():
 						'NCEP-CFSv2': 'https://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.NCEP-CFSv2/.HINDCAST/.MONTHLY/.prec/S/%280000%201%20{monf}%20{fyr}%29/VALUES/L/{tgti}/{tgtf}/RANGEEDGES/%5BL%5D//keepgrids/average/%5BM%5D/average/Y/{sla1}/{nla1}/RANGEEDGES/X/{wlo1}/{elo1}/RANGEEDGES/-999/setmissing_value/%5BX/Y%5D%5BL/S/add%5D/cptv10.tsv'},
 		  }
 		}
+
+
+	def tsv_to_dat(self, fcsttype, filename, tar_ndx):
+		tgt = self.tgts[tar_ndx]
+		mon = self.mons[tar_ndx]
+		if fcsttype == 'FCST_Obs':
+			lats, longs, data, years = self.read_forecast('deterministic', self.models[0], self.PREDICTAND, self.mpref, tgt, mon, self.fyr, filename='./input/NextGen'+'_'+self.PREDICTAND+ '_' + tgt+'_ini'+self.monf[tar_ndx]+'.tsv', converting_tsv=True)
+		elif fcsttype == 'FCST_Anomaly':
+			lats, longs, data, years = self.read_forecast('deterministic', self.models[0], self.PREDICTAND, self.mpref, tgt, mon, self.fyr, filename='./output/NextGen_Anomaly.tsv', converting_tsv=True)
+		else:
+
+			filename='./output/NextGen'+'_'
+			filename = filename + self.PREDICTAND + self.PREDICTAND + '_'
+			filename = filename + self.mpref
+			filename = filename + fcsttype+'_'
+			filename = filename + tgt + '_'
+			filename = filename + self.monf[tar_ndx]
+			filename = filename + str(self.fyr) + '.tsv'
+			lats, longs, data, years = self.read_forecast('deterministic', self.models[0], self.PREDICTAND, self.mpref, tgt, mon, self.fyr, filename=filename , converting_tsv=True)
+		W, XD = len(longs), longs[1] - longs[0]
+		H, YD = len(lats), lats[1] - lats[0]
+		T = len(years)
+		if fcsttype == 'FCST_Anomaly':
+			f = open('./output/NextGen_Anomaly.ctl', 'w')
+		else:
+			f=open('./output/NextGen' +'_'+self.PREDICTAND+self.PREDICTAND+'_'+self.mpref+fcsttype+ '_' +tgt+'_'+self.monf[tar_ndx]+str(self.fyr)+'.ctl','w')
+		f.write('XDEF {} 1 1 {}\n'.format(W, XD))
+		f.write('YDEF {} 1 1 {}\n'.format(H, YD))
+		f.write('TDEF {} 1 1 1\n'.format(T))
+		f.close()
+		print('Wrote {}'.format('./output/NextGen' +'_'+self.PREDICTAND+self.PREDICTAND+'_'+self.mpref+fcsttype+ '_' +tgt+'_'+self.monf[tar_ndx]+str(self.fyr)+'.ctl'))
+
+		if fcsttype == 'FCST_Anomaly':
+			f = open('./output/NextGen_Anomaly.dat', 'wb')
+		else:
+			f=open('./output/NextGen' +'_'+self.PREDICTAND+self.PREDICTAND+'_'+self.mpref+fcsttype+ '_' +tgt+'_'+self.monf[tar_ndx]+str(self.fyr)+'.dat','wb')
+		for t in range(T):
+			f.write(struct.pack('i', int(W*H*np.dtype('float32').itemsize)))
+			for i in range(H):
+				for j in range(W):
+					f.write(struct.pack('f', float(data[0][i][j])))
+			f.write(struct.pack('i', int(W*H*np.dtype('float32').itemsize)))
+		f.close()
+		print('Wrote {}'.format('./output/NextGen' +'_'+self.PREDICTAND+self.PREDICTAND+'_'+self.mpref+fcsttype+ '_' +tgt+'_'+self.monf[tar_ndx]+str(self.fyr)+'.dat'))
 
 
 	def setupParams(self, tar_ndx):
@@ -283,7 +328,6 @@ class PyCPT_Args():
 		self.arg_dict['ndays'] = self.ndays
 		self.arg_dict['nmonths30'] = self.nmonths*30
 		self.arg_dict['obs_source'] = self.obs_source
-		self.file='FCST_xvPr'
 		self.NGMOS = 'None'
 
 		#If you have local observations data, please provide some metadata here!
@@ -790,7 +834,7 @@ class PyCPT_Args():
 
 
 
-		if self.MOS=='CCA' or self.MOS=='PCR' or self.MOS=='None':  #kjch092120 #DO NOT USE CPT to compute probabilities if MOS='None' --use IRIDL for direct counting
+		if self.MOS=='CCA' or self.MOS=='PCR':  #kjch092120 #DO NOT USE CPT to compute probabilities if MOS='None' --use IRIDL for direct counting
 			#######FORECAST(S)	!!!!!
 			# Probabilistic (3 categories) maps
 			f.write("455\n")
@@ -1786,6 +1830,65 @@ class PyCPT_Args():
 		f.write("cpt:nfields=1\n")
 		#f.write("cpt:T	" + str(Tarr)+"\n")  #not really needed
 		for it in range(T):
+			if Tarr[it] == 1:
+				Tarr[it] = 1000 + it
+			if xyear==True:
+				f.write("cpt:field="+vari+", cpt:L="+str(L)+" months, cpt:S="+str(Ti)+"-"+S+"-01T00:00, cpt:T="+str(Tarr[it])+"-"+mi+"/"+str(Tarr[it]+1)+"-"+mf+", cpt:nrow="+str(H)+", cpt:ncol="+str(W)+", cpt:row=Y, cpt:col=X, cpt:units="+units+", cpt:missing=-999.\n")
+			else:
+				f.write("cpt:field="+vari+", cpt:L="+str(L)+" months, cpt:S="+str(Ti)+"-"+S+"-01T00:00, cpt:T="+str(Tarr[it])+"-"+mi+"/"+mf+", cpt:nrow="+str(H)+", cpt:ncol="+str(W)+", cpt:row=Y, cpt:col=X, cpt:units="+units+", cpt:missing=-999.\n")
+			#f.write("\t")
+			np.savetxt(f, Xarr[0:-1], fmt="%.6f",newline='\t') #f.write(str(Xarr)[1:-1])
+			f.write("\n") #next line
+			for iy in range(H):
+				#f.write(str(Yarr[iy]) + "\t" + str(var[it,iy,0:-1])[1:-1]) + "\n")
+				np.savetxt(f,np.r_[Yarr[iy+1],var[it,iy,0:]],fmt="%.6f", newline='\t')  #excise extra line
+				f.write("\n") #next line
+		f.close()
+
+	def writeAnomalyCPT(self, var, outfile):
+		vari = 'prec'
+		varname = vari
+		units = 'mm'
+		var[np.isnan(var)]=-999. #use CPT missing value
+		tar = self.tgts[tar_ndx]
+		L=0.5*(float(self.tgtf[tar_ndx])+float(self.tgti[tar_ndx]))
+		monthdic = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06','Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12'}
+		S=monthdic[self.mons[tar_ndx]]
+		if '-' in tar:
+			mi=monthdic[tar.split("-")[0]]
+			mf=monthdic[tar.split("-")[1]]
+
+			#Read grads file to get needed coordinate arrays
+			W, Wi, XD, H, Hi, YD, T, Ti, TD = self.readGrADSctl(self.models,self.fprefix,self.PREDICTAND,self.mpref,self.file,tar,self.monf[tar_ndx],self.fyr)
+			#W, Wi, XD, H, YD, T, Ti, TD
+			if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
+				xyear=True  #flag a cross-year season
+			else:
+				#Ti=Ti+1
+				xyear=False
+		else:
+			mi=monthdic[tar]
+			mf=monthdic[tar]
+
+			#Read grads file to get needed coordinate arrays
+			W, Wi, XD, H, Hi, YD, T, Ti, TD = self.readGrADSctl(self.models,self.fprefix,self.PREDICTAND,self.mpref,self.file,tar,self.monf[tar_ndx],self.fyr)
+			if tar=='Dec-Feb' or tar=='Nov-Jan':  #double check years are sync
+				xyear=True  #flag a cross-year season
+			else:
+				#Ti=Ti+1
+				xyear=False
+
+		Tarr = np.arange(Ti, Ti+T)
+		Xarr = np.linspace(Wi, Wi+W*XD,num=W+1)
+		Yarr = np.linspace(Hi+H*YD, Hi,num=H+1)
+
+		#Now write the CPT file
+		f = open(outfile, 'w')
+		f.write("xmlns:cpt=http://iri.columbia.edu/CPT/v10/\n")
+		#f.write("xmlns:cf=http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.4/\n")   #not really needed
+		f.write("cpt:nfields=1\n")
+		#f.write("cpt:T	" + str(Tarr)+"\n")  #not really needed
+		for it in range(T):
 			if xyear==True:
 				f.write("cpt:field="+vari+", cpt:L="+str(L)+" months, cpt:S="+str(Ti)+"-"+S+"-01T00:00, cpt:T="+str(Tarr[it])+"-"+mi+"/"+str(Tarr[it]+1)+"-"+mf+", cpt:nrow="+str(H)+", cpt:ncol="+str(W)+", cpt:row=Y, cpt:col=X, cpt:units="+units+", cpt:missing=-999.\n")
 			else:
@@ -1844,9 +1947,11 @@ class PyCPT_Args():
 			print('Cross-validated prediction files successfully produced')
 		if self.file=='FCST_mu':
 			self.writeCPT(tar_ndx, NG,'./output/NextGen_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'FCST_mu_'+self.tgts[tar_ndx]+'_'+self.monf[tar_ndx]+str(self.fyr)+'.tsv')
+			self.tsv_to_dat(self.file, '../output/NextGen_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'FCST_mu_'+self.tgts[tar_ndx]+'_'+self.monf[tar_ndx]+str(self.fyr)+'.tsv', tar_ndx )
 			print('Forecast files successfully produced')
 		if self.file=='FCST_var':
-			self.writeCPT(tar_ndx, NG,'./output/NextGen_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'FCST_var_'+self.tgts[tar_ndx]+'_'+self.monf[tar_ndx]+str(fyr)+'.tsv')
+			self.writeCPT(tar_ndx, NG,'./output/NextGen_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'FCST_var_'+self.tgts[tar_ndx]+'_'+self.monf[tar_ndx]+str(self.fyr)+'.tsv')
+			self.tsv_to_dat(self.file, '../output/NextGen_'+self.fprefix+self.PREDICTAND+'_'+self.mpref+'FCST_var_'+self.tgts[tar_ndx]+'_'+self.monf[tar_ndx]+str(self.fyr)+'.tsv', tar_ndx)
 			print('Forecast error files successfully produced')
 
 	def plt_ng_probabilistic(self, use_shp="False"):
@@ -1857,8 +1962,9 @@ class PyCPT_Args():
 				print('Failed to load custom shape file')
 				use_shp = "False"
 
-		self._tempmods = copy.deepcopy(self.models)
-		self.models = ['NextGen']
+		print(self.models)
+
+		self.models = self._tempmods
 		cbar_loc, fancy = 'bottom', True
 		nmods=len(self.models)
 		nsea=len(self.tgts)
@@ -1869,16 +1975,16 @@ class PyCPT_Args():
 		for i in range(nmods):
 			for j in range(nsea):
 				if platform.system() == "Windows":
-					plats, plongs, av = self.read_forecast_bin('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+					plats, plongs, av, years = self.read_forecast_bin('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
 				else:
-					plats, plongs, av = self.read_forecast('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+					plats, plongs, av, years = self.read_forecast('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
 				for kl in range(av.shape[0]):
 					list_probabilistic_by_season[j][kl].append(av[kl])
-				if platform.system() == "Windows":
-					dlats, dlongs, av = self.read_forecast_bin('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
-				else:
-					dlats, dlongs, av = self.read_forecast('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
-				list_det_by_season[j].append(av[0])
+				#if platform.system() == "Windows":
+				#	dlats, dlongs, av = self.read_forecast_bin('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+				#else:
+				#	dlats, dlongs, av = self.read_forecast('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+				#list_det_by_season[j].append(av[0])
 
 		ng_probfcst_by_season = []
 		ng_detfcst_by_season = []
@@ -2080,28 +2186,62 @@ class PyCPT_Args():
 			return lats, lons, np.asarray(vars)
 
 
-	def read_forecast(self, fcst_type, model, predictand, mpref, mons, mon, fyr):
-		if fcst_type == 'deterministic':
-			f = open("./output/" + model + '_' + predictand + '_' + mpref + 'FCST_mu_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
-		elif fcst_type == 'probabilistic':
-			f = open("./output/" + model + '_' + predictand + '_' + mpref + 'FCST_P_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
+	def read_forecast(self, fcst_type, model, predictand, mpref, mons, mon, fyr, filename='None', converting_tsv=False):
+		if filename == 'None':
+			if fcst_type == 'deterministic':
+				try:
+					if model=="NextGen":
+						f = open("./output/" + model + '_' + predictand + predictand + '_' + mpref + 'FCST_mu_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
+					else:
+						f = open("./output/" + model + '_' + predictand  + '_' + mpref + 'FCST_mu_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
+				except:
+					if model=="NextGen":
+						f = open("./output/" + model + '_' + predictand + predictand + '_' + mpref + 'FCST_mu_' +mons + '_' +mon+str(fyr)+'.tsv', 'r')
+					else:
+						f = open("./output/" + model + '_' + predictand + '_' + mpref + 'FCST_mu_' +mons + '_' +mon+str(fyr)+'.tsv', 'r')
+
+			elif fcst_type == 'probabilistic':
+				if model=="NextGen":
+					f = open("./output/" + model + '_' + predictand + predictand + '_' + mpref + 'FCST_P_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
+				else:
+					f = open("./output/" + model + '_' + predictand + '_' + mpref + 'FCST_P_' +mons + '_' +mon+str(fyr)+'.txt', 'r')
+
+			else:
+				print('invalid fcst_type')
+				return
 		else:
-			print('invalid fcst_type')
-			return
-		lats, all_vals, vals = [], [], []
-		flag = 0
+			f = open(filename,'r')
+
+		lats, all_vals, vals, years = [], [], [], []
+		past_header, flag = False, 0
 		for line in f:
 			if line[0:4] == 'cpt:':
-				if flag == 2:
-					vals = np.asarray(vals, dtype=float)
-					if fcst_type == 'deterministic':
-						vals[vals == -999.0] = np.nan
-					if fcst_type == 'probabilistic':
-						vals[vals == -1.0] = np.nan
-					all_vals.append(vals)
-					lats = []
-					vals = []
-				flag = 1
+				if converting_tsv:
+					if not past_header:
+						past_header=True
+					else:
+						years.append(int(line.split(',')[3][7:11]))
+						if flag == 2:
+							vals = np.asarray(vals, dtype=float)
+							if fcst_type == 'deterministic':
+								vals[vals == -999.0] = np.nan
+							if fcst_type == 'probabilistic':
+								vals[vals == -1.0] = np.nan
+							all_vals.append(vals)
+							lats = []
+							vals = []
+						flag = 1
+				else:
+					if flag == 2:
+						vals = np.asarray(vals, dtype=float)
+						if fcst_type == 'deterministic':
+							vals[vals == -999.0] = np.nan
+						if fcst_type == 'probabilistic':
+							vals[vals == -1.0] = np.nan
+						all_vals.append(vals)
+						lats = []
+						vals = []
+					flag = 1
 			elif flag == 1 and line[0:4] != 'cpt:':
 				longs = line.strip().split('\t')
 				longs = [float(i) for i in longs]
@@ -2117,7 +2257,7 @@ class PyCPT_Args():
 			vals[vals == -1.0] = np.nan
 		all_vals.append(vals)
 		all_vals = np.asarray(all_vals)
-		return lats, longs, all_vals
+		return lats, longs, all_vals, years
 
 	def ensemblefiles(self,models,work):
 
@@ -2158,8 +2298,9 @@ class PyCPT_Args():
 				print('failed to load shape file')
 				use_shp = 'False'
 
+		print(self.models)
 		self._tempmods = copy.deepcopy(self.models)
-		self.models=['NextGen']
+		#self.models=['NextGen']
 		cbar_loc, fancy = 'bottom', True
 		nmods=len(self.models)
 		nsea=len(self.tgts)
@@ -2168,20 +2309,20 @@ class PyCPT_Args():
 		list_det_by_season = [[] for i in range(nsea)]
 		for i in range(nmods):
 			for j in range(nsea):
+				#if platform.system() == "Windows":
+				#	plats, plongs, av = self.read_forecast_bin('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+				#else:
+				#	plats, plongs, av = self.read_forecast('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+				#list_probabilistic_by_season[j][0].append(av[0])
+				#list_probabilistic_by_season[j][1].append(av[1])
+				#list_probabilistic_by_season[j][2].append(av[2])
 				if platform.system() == "Windows":
-					plats, plongs, av = self.read_forecast_bin('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+					dlats, dlongs, av, years = self.read_forecast_bin('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
 				else:
-					plats, plongs, av = self.read_forecast('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
-				list_probabilistic_by_season[j][0].append(av[0])
-				list_probabilistic_by_season[j][1].append(av[1])
-				list_probabilistic_by_season[j][2].append(av[2])
-				if platform.system() == "Windows":
-					dlats, dlongs, av = self.read_forecast_bin('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
-				else:
-					dlats, dlongs, av = self.read_forecast('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+					dlats, dlongs, av, years = self.read_forecast('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
 				list_det_by_season[j].append(av[0])
 
-		ng_probfcst_by_season = []
+		#ng_probfcst_by_season = []
 		ng_detfcst_by_season = []
 		for j in range(nsea):
 			d_array = np.asarray(list_det_by_season[j])
@@ -2272,6 +2413,150 @@ class PyCPT_Args():
 					cbar_bdet = fig.colorbar(CS_det, ax=ax[i][j],  cax=axins_det, orientation='horizontal', pad = 0.02)
 					cbar_bdet.set_label(labels[i])
 		fig.savefig('./images/NG_Deterministic_RealtimeForecasts.png', dpi=500, bbox_inches='tight')
+		if self.showPlot:
+			plt.show()
+		else:
+			plt.close()
+		self.models = self._tempmods
+
+
+	def plt_ng_anomaly(self, use_shp='False'):
+		if str(use_shp) == "True":
+			try:
+				shape_feature = ShapelyFeature(Reader(self.shp_file).geometries(), ccrs.PlateCarree(), facecolor='none')
+			except:
+				print('failed to load shape file')
+				use_shp = 'False'
+
+
+		self._tempmods = copy.deepcopy(self.models)
+		self.models=['NextGen']
+		print(self.models)
+		cbar_loc, fancy = 'bottom', True
+		nmods=len(self.models)
+		nsea=len(self.tgts)
+		xdim = 1
+		list_probabilistic_by_season = [[[], [], []] for i in range(nsea)]
+		list_det_by_season = [[] for i in range(nsea)]
+		for i in range(nmods):
+			for j in range(nsea):
+				#if platform.system() == "Windows":
+				#	plats, plongs, av = self.read_forecast_bin('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+				#else:
+				#	plats, plongs, av = self.read_forecast('probabilistic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+				#list_probabilistic_by_season[j][0].append(av[0])
+				#list_probabilistic_by_season[j][1].append(av[1])
+				#list_probabilistic_by_season[j][2].append(av[2])
+				if platform.system() == "Windows":
+					dlats, dlongs, av, years = self.read_forecast_bin('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr )
+				else:
+					dlats, dlongs, av, years = self.read_forecast('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr)
+				list_det_by_season[j].append(av[0])
+
+		ng_climatology_by_season = []
+		for j in range(nsea):
+			climatology_lats, climatology_longs, climatology_av, cl_years = self.read_forecast('deterministic', self.models[i], self.PREDICTAND, self.mpref, self.tgts[j], self.mons[j], self.fyr, filename='./input/'+self.models[i] + '_' + self.PREDICTAND + '_' + self.tgts[j]+'_ini' + self.mons[j] + '.tsv')
+			ng_climatology_by_season.append(np.nanmean(climatology_av, axis=0))
+
+		#ng_probfcst_by_season = []
+		ng_detfcst_by_season = []
+		for j in range(nsea):
+			d_array = np.asarray(list_det_by_season[j])
+			d_nanmean = np.nanmean(d_array, axis=0)
+			ng_detfcst_by_season.append(d_nanmean - ng_climatology_by_season[j])
+
+		fig, ax = plt.subplots(nrows=xdim, ncols=nsea, figsize=(nsea*13, xdim*10), sharex=True,sharey=True, subplot_kw={'projection': ccrs.PlateCarree()})
+		if nsea == 1:
+			ax = [ax]
+		ax = [ax]
+
+
+		#Create a feature for States/Admin 1 regions at 1:10m from Natural Earth
+		states_provinces = feature.NaturalEarthFeature(
+			category='cultural',
+		#				name='admin_1_states_provinces_shp',
+			name='admin_0_countries',
+			scale='10m',
+			facecolor='none')
+
+		for i in range(xdim):
+			for j in range(nsea):
+
+				current_cmap = plt.get_cmap('BrBG')
+				current_cmap.set_bad('white',0.0)
+				current_cmap.set_under('white', 0.0)
+
+				lats, longs = dlats, dlongs
+				ax[i][j].set_extent([longs[0],longs[-1],lats[0],lats[-1]], ccrs.PlateCarree())
+
+
+				ax[i][j].add_feature(feature.LAND)
+				#ax[i][j].add_feature(feature.COASTLINE)
+
+				if self.use_default == 'True':
+					ax[i][j].add_feature(states_provinces, edgecolor='black')
+				if str(use_shp) == 'True':
+					ax[i][j].add_feature(shape_feature, edgecolor='black')
+
+				pl=ax[i][j].gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+					  linewidth=1, color='gray', alpha=0.5, linestyle=(0,(2,4)))
+				pl.xlabels_top = False
+				pl.ylabels_left = True
+				pl.ylabels_right = False
+				#pl.xlabels_bottom = False
+				#if i == nmods - 1: change so long vals in every plot
+				pl.xlabels_bottom = True
+				pl.xformatter = LONGITUDE_FORMATTER
+				pl.yformatter = LATITUDE_FORMATTER
+				ax[i][j].set_ybound(lower=self.sla2, upper=self.nla2)
+				pl.xlabel_style = {'size': 8}#'rotation': 'vertical'}
+
+				titles = ["Rainfall Anomaly", "Probabilistic Forecast (Dominant Tercile)"]
+
+
+				if j == 0:
+					ax[i][j].text(-0.25, 0.5, "Rainfall Anomaly",rotation='vertical', verticalalignment='center', horizontalalignment='center', transform=ax[i][j].transAxes)
+
+				labels = ['Rainfall (mm)', 'Probability (%)']
+				ax[i][j].set_title(self.tgts[j])
+
+				#fancy deterministic
+				var = ng_detfcst_by_season[j]
+				CS_det = ax[i][j].pcolormesh(np.linspace(longs[0], longs[-1],num=len(longs)), np.linspace(lats[0], lats[-1], num=len(lats)), var,
+					norm=MidpointNormalize(midpoint=0.),
+					cmap=current_cmap)
+				self.file = 'FCST_mu'
+				var = np.asarray([var])
+				self.writeCPT(j, var, './output/NextGen_Anomaly.tsv')
+				self.tsv_to_dat('FCST_Anomaly', './output/NextGen_Anomaly.tsv', j)
+				print('Wrote Anomaly Grads Files')
+
+
+
+				if cbar_loc == 'left':
+					#fancy deterministic cb left
+					axins_det = inset_axes(ax[i][j],
+		            	width="5%",  # width = 5% of parent_bbox width
+		               	height="100%",  # height : 50%
+		               	loc='center left',
+		               	bbox_to_anchor=(-0.25, 0., 1, 1),
+		               	bbox_transform=ax[i][j].transAxes,
+		               	borderpad=0.1 )
+					cbar_ldet = fig.colorbar(CS_det, ax=ax[i][j], cax=axins_det,  orientation='vertical', pad=0.02)
+					cbar_ldet.set_label(labels[i]) #, rotation=270)\
+					axins_det.yaxis.tick_left()
+				else:
+					#fancy deterministic cb bottom
+					axins_det = inset_axes(ax[i][j],
+		            	width="100%",  # width = 5% of parent_bbox width
+		               	height="5%",  # height : 50%
+		               	loc='lower center',
+		               	bbox_to_anchor=(-0.1, -0.15, 1.1, 1),
+		               	bbox_transform=ax[i][j].transAxes,
+		               	borderpad=0.1 )
+					cbar_bdet = fig.colorbar(CS_det, ax=ax[i][j],  cax=axins_det, orientation='horizontal', pad = 0.02)
+					cbar_bdet.set_label(labels[i])
+		fig.savefig('./images/NG_Anomaly.png', dpi=500, bbox_inches='tight')
 		if self.showPlot:
 			plt.show()
 		else:
@@ -2474,6 +2759,7 @@ def pltmapProb(loni,lone,lati,late,fprefix,mpref,training_season, mon, fday, nwk
 	f.close()
 
 def pltmapff(models,predictand,thrs,ntrain,loni,lone,lati,late,fprefix,mpref,monf,fyr,mons,tgts, obs):
+	tsv_to_dat('FCST_Obs', '../input/NextGen_'+predictand+'_'+tar+'_ini'+monf+'.tsv', models, predictand, mpref, tar, monf, fyr, monf)
 
 	#Implement: read degrees of freedom from CPT file
 	#Formally, for CCA, dof=ntrain - #CCAmodes -1 ; since ntrain is huge after concat, dof~=ntrain for now
