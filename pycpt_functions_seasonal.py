@@ -195,12 +195,7 @@ class PyCPT_Args():
 		else:
 
 			filename='./output/NextGen'+'_'
-			filename = filename + self.PREDICTAND + self.PREDICTAND + '_'
-			filename = filename + self.mpref
-			filename = filename + fcsttype+'_'
-			filename = filename + tgt + '_'
-			filename = filename + self.monf[tar_ndx]
-			filename = filename + str(self.fyr) + '.tsv'
+			filename = filename + self.PREDICTAND + self.PREDICTAND + '_' + self.mpref+ fcsttype+'_'+ tgt + '_'+ self.monf[tar_ndx]+ str(self.fyr) + '.tsv'
 			lats, longs, data, years = self.read_forecast('deterministic', self.models[0], self.PREDICTAND, self.mpref, tgt, mon, self.fyr, filename=filename , converting_tsv=True)
 		W, XD = len(longs), longs[1] - longs[0]
 		H, YD = len(lats), lats[1] - lats[0]
@@ -209,9 +204,17 @@ class PyCPT_Args():
 			f = open('./output/NextGen_Anomaly.ctl', 'w')
 		else:
 			f=open('./output/NextGen' +'_'+self.PREDICTAND+self.PREDICTAND+'_'+self.mpref+fcsttype+ '_' +tgt+'_'+self.monf[tar_ndx]+str(self.fyr)+'.ctl','w')
-		f.write('XDEF {} 1 1 {}\n'.format(W, XD))
-		f.write('YDEF {} 1 1 {}\n'.format(H, YD))
-		f.write('TDEF {} 1 1 1\n'.format(T))
+		f.write('DSET {}\n'.format('./output/NextGen' +'_'+self.PREDICTAND+self.PREDICTAND+'_'+self.mpref+fcsttype+ '_' +tgt+'_'+self.monf[tar_ndx]+str(self.fyr)+'.dat'))
+		f.write('TITLE {}\n'.format('NextGen {}'.format(fcsttype)))
+		f.write('UNDEF -999.000000\n')
+		f.write('OPTIONS yrev sequential little_endian\n')
+		f.write('XDEF {} LINEAR {} {}\n'.format(W, longs[0], XD))
+		f.write('YDEF {} LINEAR {} {}\n'.format(H, lats[0], YD))
+		f.write('TDEF {} LINEAR 1{}{} 1yr\n'.format(T, tgt[0:2], years[0]))
+		f.write('ZDEF 1 LINEAR 1 1')
+		f.write('VARS 1\n')
+		f.write('\ta\t0\t99\t{}\t\t\t\t\t\t\tunitless\n'.format(self.PREDICTAND))
+		f.write('ENDVARS')
 		f.close()
 		print('Wrote {}'.format('./output/NextGen' +'_'+self.PREDICTAND+self.PREDICTAND+'_'+self.mpref+fcsttype+ '_' +tgt+'_'+self.monf[tar_ndx]+str(self.fyr)+'.ctl'))
 
@@ -916,7 +919,7 @@ class PyCPT_Args():
 			f.write(file)
 
 			# cross-validated skill maps
-			if self.MOS=="PCR" or self.MOS=="CCA" or self.MOS=="None": #kjch092120
+			if self.MOS=="PCR" or self.MOS=="CCA": #kjch092120
 				f.write("0\n")
 
 			# cross-validated skill maps
@@ -930,7 +933,7 @@ class PyCPT_Args():
 		###########PFV --Added by AGM in version 1.5
 		#Compute and write retrospective forecasts for prob skill assessment.
 		#Re-define forecas file if PCR or CCA
-		if self.MOS=="PCR" or self.MOS=="CCA" or self.MOS=="None" : #kjch092120
+		if self.MOS=="PCR" or self.MOS=="CCA" : #kjch092120
 			f.write("3\n")
 			file='./input/'+self.models[model_ndx]+'_'+self.fprefix+'_'+self.tgts[tar_ndx]+'_ini'+self.mons[tar_ndx]+'.tsv\n'  #here a conditional should choose if rainfall freq is being used
 			f.write(file)
